@@ -1,21 +1,12 @@
 import streamlit as st
+from supabase import create_client, Client
+from config import SUPABASE_URL, SUPABASE_KEY  # 設定情報をインポート
+import supabase_utils  # DB操作関数をインポート
+import profile_manager
 
-st.set_page_config(layout="wide")
-st.title("🚀 環境構築チェック 🚀")
-st.success("Streamlitアプリが正常に起動しました！")
+# --- アプリケーションの初期化処理 ---
+# Supabaseへの接続を確立する
+supabase:Client=create_client(SUPABASE_URL,SUPABASE_KEY)
+# Profile_managerの初期化
+profile_manager=profile_manager.ProfileManager(supabase)
 
-st.divider()
-
-st.subheader("✅ APIキーの確認")
-try:
-    gemini_key = st.secrets["GEMINI_API_KEY"]
-    supabase_url = st.secrets["SUPABASE_URL"]
-    supabase_key = st.secrets["SUPABASE_KEY"]
-
-    if gemini_key and supabase_url and supabase_key:
-        st.success("secrets.toml から全てのAPIキーを読み込めました！")
-        st.balloons()
-    else:
-        st.warning("キーが空のようです。secrets.toml ファイルを確認してください。")
-except Exception as e:
-    st.error(f"secrets.tomlの読み込みに失敗しました。ファイルが存在するか確認してください。エラー: {e}")
