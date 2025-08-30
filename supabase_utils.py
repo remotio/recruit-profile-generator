@@ -1,74 +1,71 @@
 from supabase import Client
+from typing import Dict, Any, List
 
-def get_profile_by_id(supabase: Client, user_id: int):
+def get_profile_by_id(supabase: Client, profile_id: str):
     """
     ユーザーIDを元に，特定のプロフィールをデータベースから取得する．
     一覧ページからプロフィール詳細ページに遷移する際等に使用
 
     Args:
-        supabase: Supabaseクライアントのインスタンス。
-        user_id: 取得したいユーザーのID。
+        supabase: Supabaseクライアントのインスタンス．
+        profile_id: 取得したいユーザのID．
 
     Returns:
-        指定されたユーザーのプロフィールデータ。見つからない場合やエラー時はNone。
+        指定されたユーザーのプロフィールデータ．
     """
     try:
-        response = supabase.table('profiles').select("*").eq('id', user_id).single().execute()
+        response = supabase.table('profiles').select("*").eq('id', profile_id).single().execute()
+        if not response.data:
+            raise ValueError(f"ID {profile_id} のプロフィールが見つかりませんでした。")
         return response.data
     except Exception as e:
-        print(f"IDによるプロフィール取得中にエラーが発生しました: {e}")
-        return None
+        print(f"データベースへのアクセス中にエラーが発生しました。: {e}")
+        raise ValueError("データベースへのアクセス中にエラーが発生しました。") from e
 
-def add_new_profile(supabase: Client, username: str, answers: dict):
+def add_new_profile(supabase: Client, profile_data: Dict[str, Any]):
     """
     新しいユーザープロフィールをデータベースに挿入する．
-    自己紹介のカラムは空のまま．
 
     Args:
         supabase: Supabaseクライアントのインスタンス
-        username: ユーザー名
-        answers: 質問に対するユーザーの回答の辞書 (例: {"hobby": "読書", "skill": "Python"})
+        profile_data: プロフィールに必要な項目が揃った新しいプロフィールデータ（Supabaseの関数の作法で辞書型だが，1人分のデータを想定）
 
     Returns:
-        挿入されたデータのリスト，またはエラー時はNone
+        挿入されたデータのリスト
     """
     try:
-        # 挿入するデータを作成．usernameとanswersの内容を結合する．
-        new_profile_data = {
-            "username": username,
-            **answers  # answers辞書を展開して結合
-        }
+        response=supabase.table('profiles').insert([profile_data]).execute()
 
-        response = supabase.table('profiles').insert(new_profile_data).execute()
-        
-        # 挿入されたデータを返す
+        if not response.data:
+            raise ValueError("プロフィールの追加に失敗しました。")
         return response.data
-
     except Exception as e:
         print(f"プロフィールの追加中にエラーが発生しました: {e}")
-        return None
+        raise ValueError("プロフィールの追加中にエラーが発生しました。") from e
 
-def update_profile_data(supabase: Client, user_id: int, update_data: dict):
+def replace_profile(supabase: Client, profile_data: Dict[str, Any]):
     """
-    既存のユーザープロフィールを更新する
-    自己紹介文の追加にも利用する
+    プロフィール情報全体を新しいデータで置き換える．
+    PUT /profiles/{id} 相当．
 
     Args:
         supabase: Supabaseクライアントのインスタンス
-        user_id: 更新対象のユーザーID
-        update_data: 更新したいデータを含む辞書 (例: {"generated_text": "..."})。
+        profile_data: プロフィールに必要な項目が揃った更新後のプロフィールデータ（Supabaseの関数の作法で辞書型だが，1人分のデータを想定）
+
 
     Returns:
-        更新されたデータのリスト，エラー時はNone
+        置き換えられたデータのリスト
     """
     try:
-        response = supabase.table('profiles').update(update_data).eq('id', user_id).execute()
+        response = supabase.table('profiles').upsert([profile_data], on_conflict='id').execute()
+        if not response.data:
+            raise ValueError("プロフィールの更新に失敗しました。")
         return response.data
     except Exception as e:
         print(f"プロフィールの更新中にエラーが発生しました: {e}")
-        return None
+        raise ValueError("プロフィールの更新中にエラーが発生しました。") from e
 
-def find_similar_users(supabase: Client, user_id: int, query_vector: list):
+def find_similar_users(supabase: Client, user_id: str, query_vector: list):
     """
     指定されたベクトルに類似するユーザーを検索する（自分自身は除外）
 
@@ -78,7 +75,7 @@ def find_similar_users(supabase: Client, user_id: int, query_vector: list):
         query_vector: 検索の基準となるベクトルデータ
 
     Returns:
-        類似ユーザーのデータのリスト，エラー時はNone
+        類似ユーザーのデータのリスト
     """
     try:
         response = supabase.rpc('match_profiles', {
@@ -87,7 +84,30 @@ def find_similar_users(supabase: Client, user_id: int, query_vector: list):
             'match_count': 10,
             'profile_id_to_exclude': user_id
         }).execute()
+        if not response.data:
+            print("類似ユーザーが見つかりませんでした。")
+            return []
         return response.data
     except Exception as e:
         print(f"類似ユーザーの検索中にエラーが発生しました: {e}")
-        return None
+        raise ValueError("類似ユーザーの検索中にエラーが発生しました。") from e
+    
+def get_all_profiles(supabase: Client,user_id:str):
+    """
+    自身を除く全ユーザーのプロフィールを取得する．
+
+    Args:
+        supabase: Supabaseクライアントのインスタンス．
+        user_id: 自身のユーザーID（結果から除外するために使用）．
+
+    Returns:
+        ユーザーのプロフィールデータのリスト
+    """
+    try:
+        response = supabase.table('profiles').select("*").neq('id', user_id).execute()
+        if not response.data:
+            return [] #自分以外のユーザが存在しない場合は空リストを返す 
+        return response.data
+    except Exception as e:
+        print(f"全ユーザーの取得中にエラーが発生しました: {e}")
+        raise ValueError("全ユーザーの取得中にエラーが発生しました。") from e
