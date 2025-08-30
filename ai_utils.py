@@ -1,7 +1,7 @@
 import google.generativeai as genai
 from config import GEMINI_API_KEY
 from typing import Dict, Any,List,TypedDict
-from profile_manager import UserInput
+from dict_types import UserInput
 
 # --- 初期設定 ---
 # APIキーを設定
