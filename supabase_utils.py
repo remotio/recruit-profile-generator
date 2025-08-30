@@ -51,8 +51,6 @@ def replace_profile(supabase: Client, profile_data: Dict[str, Any]):
     Args:
         supabase: Supabaseクライアントのインスタンス
         profile_data: プロフィールに必要な項目が揃った更新後のプロフィールデータ（Supabaseの関数の作法で辞書型だが，1人分のデータを想定）
-
-
     Returns:
         置き換えられたデータのリスト
     """
@@ -111,3 +109,23 @@ def get_all_profiles(supabase: Client,user_id:str):
     except Exception as e:
         print(f"全ユーザーの取得中にエラーが発生しました: {e}")
         raise ValueError("全ユーザーの取得中にエラーが発生しました。") from e
+def update_profile_embedding(supabase: Client, profile_id: str, embedding: list):
+    """
+    指定されたユーザーのプロフィールにベクトルデータを更新する．
+
+    Args:
+        supabase: Supabaseクライアントのインスタンス
+        profile_id: ベクトルを更新したいユーザーのID
+        embedding: 新しいベクトルデータ
+
+    Returns:
+        更新されたプロフィールデータ
+    """
+    try:
+        response = supabase.table('profiles').update({'embedding': embedding}).eq('id', profile_id).execute()
+        if not response.data:
+            raise ValueError("プロフィールのベクトル更新に失敗しました。")
+        return response.data
+    except Exception as e:
+        print(f"プロフィールのベクトル更新中にエラーが発生しました: {e}")
+        raise ValueError("プロフィールのベクトル更新中にエラーが発生しました。") from e
