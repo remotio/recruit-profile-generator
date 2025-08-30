@@ -1,6 +1,7 @@
 import google.generativeai as genai
 from config import GEMINI_API_KEY
-from typing import Dict, Any
+from typing import Dict, Any,List,TypedDict
+from profile_manager import UserInput
 
 # --- 初期設定 ---
 # APIキーを設定
@@ -10,7 +11,7 @@ genai.configure(api_key=GEMINI_API_KEY)
 text_generation_model = genai.GenerativeModel('gemini-1.5-flash')
 
 # --- 関数定義 ---
-def generate_introduction_text(profile_data:Dict[str,Any]) -> Dict[str,Any]:
+def generate_introduction_text(profile_data: UserInput) -> Dict[str, Any]:
     """
     ユーザの入力を元に，自己紹介文・キャッチフレーズ・タグを生成する．
     @クマペンギン
@@ -23,8 +24,8 @@ def generate_introduction_text(profile_data:Dict[str,Any]) -> Dict[str,Any]:
         AIが生成したテキストを含む辞書．
         例: {
             "catchphrase": "生成されたキャッチフレーズ",
-            "introduction_comment": "生成された自己紹介文",
-            "generated_tags": "#タグ1 #タグ2" 
+            "introduction_text": "生成された自己紹介文",
+            "tags": "#タグ1 #タグ2"
         }
     """
 
@@ -35,11 +36,16 @@ def generate_introduction_text(profile_data:Dict[str,Any]) -> Dict[str,Any]:
     # 2.Gemini APIを呼び出してテキスト生成
     response = text_generation_model.generate_content(prompt)
 
-    # 3.
-    # 結果を辞書として返す
-    return {} # 仮の戻り値
+    # 3. 結果を辞書に整形して返す
+    # "catchphrase"と"introduction_text","tags"をキーとする辞書を返すようにしてください．
+    return {#仮の戻り値 
+        "introduction_text": "生成された自己紹介文",
+        "catchphrase": "生成されたキャッチフレーズ",
+        "tags": ["#タグ1", "#タグ2"]
+    }
+ # 仮の戻り値
 
-def classify_animal_type(profile_data:dict[str,Any]) ->Dict[str,str] :
+def classify_animal_type(profile_data: UserInput) -> Dict[str, str]:
     """
     ユーザーデータと動物の候補リストを元に，最も近い動物タイプを分類し，その理由を生成する．
     @はっぱ
@@ -51,7 +57,7 @@ def classify_animal_type(profile_data:dict[str,Any]) ->Dict[str,str] :
 
     Returns:
         分類された動物の名前と，その理由を含む辞書．
-        例: {"name": "フクロウ", "reason": "知的な探究心が強いため..."}
+        例: {"animal_name": "フクロウ", "animal_reason": "知的な探究心が強いため..."}
     """
     # 1. 動物候補リストを定義
     ANIMAL_CANDIDATES = [
@@ -66,12 +72,9 @@ def classify_animal_type(profile_data:dict[str,Any]) ->Dict[str,str] :
     # 3. Gemini APIを呼び出して動物タイプを分類
     response = text_generation_model.generate_content(prompt)
 
-    # 4. 結果を辞書として返す
-    return {} #仮の戻り値 
-
-def generate_embedding(text: str):
-    """
-    テキストをベクトル化する
-    TODO
-    
-    """
+    # 4. 結果を辞書に整形して返す
+    # "animal_name"と"animal_reason"をキーとする辞書を返すようにしてください．
+    return {#仮の戻り値
+        "animal_name": "フクロウ",
+        "animal_reason": "知的な探究心が強いため..."
+    } 
