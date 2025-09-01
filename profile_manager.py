@@ -134,4 +134,14 @@ class ProfileManager:
             query_vector=query_vector
         )
         return similar_profiles
-        
+    def sign_up(self,email:str,password:str)->Dict[str,Any]:
+        """
+        新しいユーザをSupabase Authに登録する．
+        また，自動的にログインも行う．
+        """
+        return supabase_utils.sign_up(self.db_client,email,password)
+    def sign_in(self,email:str,password:str)->Dict[str,Any]: 
+        """
+        ユーザをSupabase Authにログインさせる．
+        """
+        return supabase_utils.sign_in(self.db_client,email,password)
