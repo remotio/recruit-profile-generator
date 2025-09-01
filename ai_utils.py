@@ -87,7 +87,6 @@ if __name__ == '__main__':
     # 1. テスト用のダミーデータを作成する
     # このデータは、りもさんが定義したUserInputの型に合わせて作ります。
     test_user_input: UserInput = {
-        "user_id": "test_user_01",
         "last_name": "山田",
         "first_name": "さき",
         "nickname": "さき",
@@ -97,7 +96,6 @@ if __name__ == '__main__':
         "hobbies": ["カフェ巡り", "映画鑑賞"],
         "happy_topic": "おすすめの映画について",
         "expert_topic": "美味しいコーヒーの淹れ方",
-        "tags": ["#カフェ好き", "#映画"]
     }
 
     # 2. 作成した関数を呼び出してみる
