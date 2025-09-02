@@ -1,5 +1,9 @@
 import streamlit as st
-from api_client import get_profile_by_id
+from profile_manager import ProfileManager
+
+supabase_client=st.session_state.supabase_client
+profile_manager=st.session_state.profile_manager
+current_user=st.session_state.user
 
 st.markdown("""
 <style>
@@ -31,7 +35,7 @@ def display_profile_detail(profile_id: str):
     """
     指定されたIDのプロフィール詳細をモーダル内に描画する関数コンポーネント
     """
-    profile = get_profile_by_id(profile_id)
+    profile = profile_manager.get_profile_by_id(profile_id)
 
     if not profile:
         st.error("プロファイルが見つかりませんでした。")
