@@ -1,12 +1,16 @@
 import streamlit as st
-from api_client import get_all_profiles
+from profile_manager import ProfileManager
 from streamlit_modal import Modal
-
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from views.profile_detail_component import display_profile_detail
+
+
+supabase_client=st.session_state.supabase_client
+profile_manager=st.session_state.profile_manager
+current_user=st.session_state.user
 
 def render_page():
     st.markdown("""
@@ -64,7 +68,7 @@ def render_page():
         modal.open()
 
     with st.spinner("みんなのプロフィールを読み込んでいます..."):
-        profiles = get_all_profiles()
+        profiles = profile_manager.get_all_profiles(st.session_state.user['id'])
 
     if not profiles:
         st.info("まだ誰も登録していません。")
@@ -88,9 +92,9 @@ def render_page():
                     
                     st.button(
                         "もっと見る", 
-                        key=profile['profile_id'],
+                        key=profile['id'],
                         on_click=open_modal_with_id, 
-                        args=(profile['profile_id'],),
+                        args=(profile['id'],),
                         use_container_width=True
                     )
 
