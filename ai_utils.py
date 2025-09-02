@@ -134,14 +134,63 @@ def classify_animal_type(profile_data: UserInput) -> Dict[str, str]:
     # 2. プロンプトを作成
     prompt=f"""
     ここにプロンプトを書く
+       以下のユーザー情報をもとに，次の5カテゴリのいずれかに分類し，
+    最も適切な動物を {ANIMAL_CANDIDATES} から1つ選び，理由も述べてください。
+
+    カテゴリ:
+    1. リーダーシップ全開タイプ
+    2. 頭脳派・ミステリアスタイプ
+    3. ムードメーカー・元気いっぱいタイプ
+    4. 癒し系・ほんわかタイプ
+    5. 自由人・マイペースタイプ
+
+    出力形式は必ずJSONで:
+    {{
+        "animal_name": "...",
+        "animal_category": "...",
+        "animal_reason": "..."
+    }}
+
+    ユーザー情報: {profile_data}
+
     """
 
-    # 3. Gemini APIを呼び出して動物タイプを分類
-    response = text_generation_model.generate_content(prompt)
+     try:
+        response = text_generation_model.generate_content(prompt)
+        text = response.candidates[0].content.parts[0].text
 
-    # 4. 結果を辞書に整形して返す
-    # "animal_name"と"animal_reason"をキーとする辞書を返すようにしてください．
-    return {#仮の戻り値
-        "animal_name": "フクロウ",
-        "animal_reason": "知的な探究心が強いため..."
-    } 
+        import json
+        return json.loads(text)
+    except Exception as e:
+        return {"error": "動物分類に失敗しました"}
+
+
+# --- テスト用コード ---
+
+if __name__ == "__main__":
+    # --- ダミーデータを用意 ---
+    dummy_profile_1 = {
+        "name": "太郎",
+        "hobby": "読書と映画鑑賞",
+        "personality": "落ち着いていて分析好き",
+        "strength": "集中力が高い",
+        "weakness": "運動は苦手"
+    }
+
+    dummy_profile_2 = {
+        "name": "花子",
+        "hobby": "友達と遊ぶことと旅行",
+        "personality": "明るくておしゃべり好き",
+        "strength": "誰とでもすぐ仲良くなれる",
+        "weakness": "ちょっとせっかち"
+    }
+
+    # --- テスト実行 ---
+    print("=== 自己紹介生成テスト ===")
+    print(generate_introduction_text(dummy_profile_1))
+    print(generate_introduction_text(dummy_profile_2))
+
+    print("\n=== 動物分類テスト ===")
+    print(classify_animal_type(dummy_profile_1))
+    print(classify_animal_type(dummy_profile_2))
+
