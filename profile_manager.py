@@ -134,4 +134,27 @@ class ProfileManager:
             query_vector=query_vector
         )
         return similar_profiles
+    
+    def generate_conversation_starters(self, my_id: str, opponent_id: str) -> Dict[str, List[str]]:
+        """
+        自分と相手のIDを元に、会話のきっかけを生成する。
+        @クマペンギン
+        """
         
+        # 1. データベースから、自分と相手のプロフィール情報を取得する
+        #    (self を使って、同じクラス内のメソッドを呼び出します)
+        my_profile = self.get_profile_by_id(my_id)
+        opponent_profile = self.get_profile_by_id(opponent_id)
+
+        if not my_profile or not opponent_profile:
+            return {
+                "common_points": ["エラー：プロフィールの取得に失敗しました。"],
+                "topics": []
+            }
+        
+        # 2. 取得した2つのプロフィール情報を、ai_utilsの関数に渡して、AIに会話のきっかけを生成させる
+        conversation_data = create_conversation_starters(my_profile, opponent_profile)
+
+        # 3. AIが生成した結果を、そのまま返す
+        return conversation_data
+
