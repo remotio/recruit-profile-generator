@@ -175,3 +175,39 @@ def sign_in(supabase:Client,email:str,password:str)->Dict[str,Any]:
     except Exception as e:
         print(f"ログイン中にエラーが発生しました: {e}")
         raise ValueError("ログインに失敗しました。") from e
+def get_memo(supabase:Client,author_id:str,target_id)->Dict[str,Any]:
+    """
+    author_idからtarget_idへのメモを取得する．
+    """
+    try:
+        response=supabase.table('memos').select("*").eq('author_id',author_id).eq('target_id',target_id).single().execute()
+        return response.data
+    except Exception as e:
+        print(f"メモの取得中にエラーが発生しました: {e}")
+        raise ValueError("メモの取得に失敗しました。") from e
+def upsert_memo(supabase:Client,author_id:str,target_id:str,memo_text:str)->Dict[str,Any]:
+    """
+    author_idからtarget_idへのメモを追加または更新する．
+    """
+    try:
+        response=supabase.table('memos').upsert({
+            "author_id":author_id,
+            "target_id":target_id,
+            "memo":memo_text
+        },on_conflict='author_id,target_id').execute()
+        if not response.data:
+            raise ValueError("メモの追加または更新に失敗しました。")
+        return response.data[0]# upsertはリストを返すため最初の要素を取得
+    except Exception as e:
+        print(f"メモの追加または更新中にエラーが発生しました: {e}")
+        raise ValueError("メモの追加または更新に失敗しました。") from e
+def delete_memo(supabase:Client,author_id:str,target_id:str)->None:
+    """
+    メモを削除する
+    """
+    try:
+        supabase.table('memos').delete().eq('author_id',author_id).eq('target_id',target_id).execute()
+    except Exception as e:
+        print(f"メモの削除中にエラーが発生しました: {e}")
+        raise ValueError("メモの削除に失敗しました。") from e
+

@@ -134,6 +134,7 @@ class ProfileManager:
             query_vector=query_vector
         )
         return similar_profiles
+    # 認証関連の関数
     def sign_up(self,email:str,password:str)->Dict[str,Any]:
         """
         新しいユーザをSupabase Authに登録する．
@@ -154,3 +155,19 @@ class ProfileManager:
             return True
         except ValueError:
             return False
+    # メモ関連の関数
+    def get_memo_for_target(self,current_user_id:str,target_user_id:str)->Dict[str,Any]:
+        """
+        現在ログインしているユーザが対象ユーザについて書いたメモを取得する.
+        """
+        return supabase_utils.get_memo(self.db_client, current_user_id, target_user_id)
+    def save_memo(self,current_user_id:str,target_user_id:str,memo_text:str)->Dict[str,Any]:
+        """
+        メモを作成または更新する．
+        """
+        return supabase_utils.upsert_memo(self.db_client, current_user_id, target_user_id, memo_text)
+    def delete_memo(self,current_user_id:str,target_user_id:str)->None:
+        """
+        メモを削除する
+        """
+        return supabase_utils.delete_memo(self.db_client, current_user_id, target_user_id)
