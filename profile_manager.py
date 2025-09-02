@@ -145,3 +145,12 @@ class ProfileManager:
         ユーザをSupabase Authにログインさせる．
         """
         return supabase_utils.sign_in(self.db_client,email,password)
+    def check_profile_exists(self, user_id: str) -> bool:
+        """
+        プロフィールが存在するか確認する．
+        """
+        try:
+            self.get_profile_by_id(user_id)
+            return True
+        except ValueError:
+            return False
