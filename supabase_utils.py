@@ -129,3 +129,49 @@ def update_profile_embedding(supabase: Client, profile_id: str, embedding: list)
     except Exception as e:
         print(f"プロフィールのベクトル更新中にエラーが発生しました: {e}")
         raise ValueError("プロフィールのベクトル更新中にエラーが発生しました。") from e
+def sign_up(supabase:Client,email:str,password:str)->Dict[str,Any]:
+    """
+    新しいユーザをSupabase Authに登録する．
+    """
+    try:
+        response=supabase.auth.sign_up({
+            "email":email,
+            "password":password
+        })
+        if response.user is None:
+            raise ValueError("新規登録に失敗しました。")
+        return {
+            "id":response.user.id,
+            "email":response.user.email
+        }
+    except Exception as e:
+        # メールの重複によるエラーをチェック
+        if "already registered" in str(e):
+            raise ValueError("このメールアドレスは既に登録されています。") from e
+        elif "Password should be at least 6 characters." in str(e):
+            raise ValueError("パスワードは6文字以上である必要があります。") from e
+        elif "Invalid email" in str(e):
+            raise ValueError("メールアドレスの形式が正しくありません。") from e
+    
+        else:
+            print(f"新規登録中にエラーが発生しました: {e}")
+            raise ValueError("新規登録に失敗しました。") from e
+
+def sign_in(supabase:Client,email:str,password:str)->Dict[str,Any]:
+    """
+    Supabase Authでユーザにサインインさせる．
+    """
+    try:
+        response=supabase.auth.sign_in_with_password({
+            "email":email,
+            "password":password
+        })
+        if response.user is None:
+            raise ValueError("ログインに失敗しました。")
+        return {
+            "id":response.user.id,
+            "email":response.user.email
+        }
+    except Exception as e:
+        print(f"ログイン中にエラーが発生しました: {e}")
+        raise ValueError("ログインに失敗しました。") from e
