@@ -134,7 +134,6 @@ class ProfileManager:
             query_vector=query_vector
         )
         return similar_profiles
-    # 認証関連の関数
     def sign_up(self,email:str,password:str)->Dict[str,Any]:
         """
         新しいユーザをSupabase Authに登録する．
@@ -155,19 +154,30 @@ class ProfileManager:
             return True
         except ValueError:
             return False
-    # メモ関連の関数
-    def get_memo_for_target(self,current_user_id:str,target_user_id:str)->Dict[str,Any]:
+
+    
+    def generate_conversation_starters(self, my_id: str, opponent_id: str) -> Dict[str, List[str]]:
         """
-        現在ログインしているユーザが対象ユーザについて書いたメモを取得する.
+        自分と相手のIDを元に、会話のきっかけを生成する。
         """
-        return supabase_utils.get_memo(self.db_client, current_user_id, target_user_id)
-    def save_memo(self,current_user_id:str,target_user_id:str,memo_text:str)->Dict[str,Any]:
-        """
-        メモを作成または更新する．
-        """
-        return supabase_utils.upsert_memo(self.db_client, current_user_id, target_user_id, memo_text)
-    def delete_memo(self,current_user_id:str,target_user_id:str)->None:
-        """
-        メモを削除する
-        """
-        return supabase_utils.delete_memo(self.db_client, current_user_id, target_user_id)
+        try:
+            # 1. データベースから、自分と相手のプロフィール情報を取得する
+            #    (self を使って、同じクラス内のメソッドを呼び出します)
+            my_profile = self.get_profile_by_id(my_id)
+            opponent_profile = self.get_profile_by_id(opponent_id)
+
+            if not my_profile or not opponent_profile:
+                return {
+                    "common_points": ["エラー：プロフィールの取得に失敗しました。"],
+                    "topics": []
+                }
+            
+            # 2. 取得した2つのプロフィール情報を、ai_utilsの関数に渡して、AIに会話のきっかけを生成させる
+            conversation_data = ai_utils.create_conversation_starters(my_profile, opponent_profile)
+
+            # 3. AIが生成した結果を、そのまま返す
+            return conversation_data
+        except Exception as e:
+            print(f"会話のきっかけ生成中にエラーが発生しました: {e}")
+            raise ValueError("会話のきっかけ生成に失敗しました。") from e
+

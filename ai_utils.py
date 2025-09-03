@@ -1,6 +1,5 @@
 import google.generativeai as genai
 import json
-from dotenv import load_dotenv  # dotenvを追加
 from typing import Dict, Any, List
 from dict_types import UserInput 
 import streamlit as st
@@ -138,32 +137,129 @@ def classify_animal_type(profile_data: UserInput) -> Dict[str, str]:
         print(f"AIによる動物分類でエラーが発生しました: {e}")
         raise ValueError("動物分類に失敗しました。") from e
 
+def create_conversation_starters(profile_a: Dict[str, Any], profile_b: Dict[str, Any]) -> Dict[str, List[str]]:
+    """
+    2人のプロフィール情報を元に、会話のきっかけとなる共通点や質問をAIに生成させる。
+    @クマペンギン
+    """
+    
+    # 1. 2人のプロフィール情報から、AIに渡すための要約を作成
+    your_info = f"""
+- ニックネーム: {profile_a.get('nickname')}
+- 誕生日: {profile_a.get('birth_date')}
+- 大学: {profile_a.get('university')}
+- 出身地: {profile_a.get('hometown')}
+- 趣味: {', '.join(profile_a.get('hobbies', []))}
+- 好きな話題: {profile_a.get('happy_topic')}
+- 得意なこと: {profile_a.get('expert_topic')}
+- タグ: {', '.join(profile_a.get('tags', []))}
+"""
 
-# --- テスト用コード ---
+    opponent_info = f"""
+- ニックネーム: {profile_b.get('nickname')}
+- 誕生日: {profile_b.get('birth_date')}
+- 大学: {profile_b.get('university')}
+- 出身地: {profile_b.get('hometown')}
+- 趣味: {', '.join(profile_b.get('hobbies', []))}
+- 好きな話題: {profile_b.get('happy_topic')}
+- 得意なこと: {profile_b.get('expert_topic')}
+- タグ: {', '.join(profile_b.get('tags', []))}
+"""
+
+    # 2. プロンプトを作成
+    prompt = f"""
+# あなたへの役割
+あなたは、初対面の二人が仲良くなるための会話をサポートする、優れたアイスブレイク・アシスタントです。
+
+# 2人のプロフィール情報
+## あなた（ユーザーA）
+{your_info}
+
+## 相手（ユーザーB）
+{opponent_info}
+
+# 命令
+上記の2人のプロフィールを比較し、「あなた」が「相手」と楽しく会話を始めるための「きっかけ」を生成してください。
+- "common_points": 「あなた」と「相手」のプロフィールから、**会話のきっかけとして面白い、ユニークな共通点**を3つまで、**短い単語やフレーズ**で挙げてください。
+- **【重要】以下の当たり前の共通点は除外してください：**
+  - 年齢が近いこと
+  - 学生であること
+  - （今回の集まりの）内定者であること
+- 表面的な一致だけでなく、地理的（例：関西出身）、カテゴリ的（例：インドアな趣味）など、**より深いレベルでの意外な共通点**を優先してください。共通点がない場合は、その旨を正直に記載してください。
+- "topics": 「あなた」が「相手」に質問するための、具体的で面白い話題を3つ提案してください。提案は必ず「相手の〇〇について、△△と質問してみましょう。」というアドバイス形式で、あなた（ユーザーA）へのメッセージとして作成してください。提案文の中では、相手のニックネームを直接使わないでください。
+
+# 出力形式
+必ず、以下の例のようなJSON形式で出力してください。
+{{
+  "common_points": [
+    "福岡県出身",
+    "映画鑑賞が趣味",
+    "九州地方の大学"
+  ],
+  "topics": [
+    "相手の趣味である「カフェ巡り」について、「普段はどんなカフェに行かれるんですか？」と質問してみましょう。",
+    "出身地が同じ福岡県なので、「福岡で一番好きなラーメン屋さんはどこですか？」と聞いてみるのはどうでしょう。",
+    "相手はコーヒーの淹れ方が得意とのことなので、「おすすめの豆や淹れ方をぜひ教えてほしいです！」とお願いしてみましょう。"
+  ]
+}}
+"""
+    
+    try:
+        conv_starter_model=genai.GenerativeModel('gemini-1.5-flash')
+        # 3. Gemini APIを呼び出してテキスト生成
+        response = conv_starter_model.generate_content(prompt)
+        ai_response_text = response.text
+        
+        # 4. AIの返事からJSON部分だけを賢く抜き出す
+        start_index = ai_response_text.find('{')
+        end_index = ai_response_text.rfind('}')
+        
+        if start_index != -1 and end_index != -1:
+            json_string = ai_response_text[start_index : end_index + 1]
+            ai_response_dict = json.loads(json_string)
+            return ai_response_dict
+        else:
+            raise ValueError("AIのレスポンスに有効なJSONが含まれていません。")
+
+    except Exception as e:
+        print(f"会話のきっかけ生成でエラーが発生しました: {e}")
+        raise ValueError("会話のきっかけ生成に失敗しました。") from e
+
+# --- ここからがテスト用のコードです ---
 if __name__ == '__main__':
-    # 1. テスト用のダミーデータを作成する
-    test_user_input: UserInput = {
-        "last_name": "山田",
-        "first_name": "さき",
-        "nickname": "さき",
-        "birth_date": "2002-08-10",
-        "university": "福岡大学",
-        "hometown": "福岡県",
-        "hobbies": ["カフェ巡り", "映画鑑賞"],
-        "happy_topic": "おすすめの映画について",
-        "expert_topic": "美味しいコーヒーの淹れ方",
+    test_user_input_saki = {
+        "last_name": "山田", "first_name": "さき", "nickname": "さき",
+        "birth_date": "2002-08-10", "university": "福岡大学", "hometown": "福岡県",
+        "hobbies": ["カフェ巡り", "映画鑑賞"], "happy_topic": "おすすめの映画について",
+        "expert_topic": "美味しいコーヒーの淹れ方"
     }
-
-    # 2. 自己紹介文生成のテスト
-    print("--- AIに自己紹介文の生成をリクエストします... ---")
-    generated_data = generate_introduction_text(test_user_input)
+    '''
+    # --- テスト1: 自己紹介文の生成 ---
+    print("--- Test 1: 自己紹介文の生成を開始します... ---")
+    generated_data = generate_introduction_text(test_user_input_saki)
+    print("\n--- AIからのレスポンス (自己紹介文) ---")
     import pprint
     pprint.pprint(generated_data)
-    print("--------------------------\n")
+    print("-" * 30)
     
-    # 3. 動物分類のテストを追加
+    # 2. 動物分類のテストを追加
     print("--- AIに動物分類をリクエストします... ---")
     animal_data = classify_animal_type(test_user_input)
     pprint.pprint(animal_data)
     print("--------------------------")
-
+    '''
+    # --- テスト3: 会話のきっかけ生成 ---
+    print("\n--- Test 3: 会話のきっかけ生成を開始します... ---")
+    # 2人目のテストユーザーを定義
+    test_user_input_rimo = {
+        "last_name": "鈴木", "first_name": "りも", "nickname": "りも",
+        "birth_date": "2001-05-20", "university": "東京工業大学", "hometown": "東京都",
+        "hobbies": ["プログラミング", "音楽フェス"], "happy_topic": "新しい技術について",
+        "expert_topic": "インフラ構築", "tags": ["#Supabase", "#音楽好き"]
+    }
+    
+    # 新しい関数を呼び出す
+    conversation_starters = create_conversation_starters(test_user_input_saki, test_user_input_rimo)
+    print("\n--- AIからのレスポンス (会話のきっかけ) ---")
+    print(conversation_starters)
+    print("-" * 30)

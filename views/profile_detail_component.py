@@ -7,7 +7,7 @@ profile_manager=st.session_state.profile_manager
 current_user=st.session_state.user
 
 st.markdown("""
-<style>
+<style>     
 .left-col-image {
     width: 150px;
     height: 150px;
@@ -27,7 +27,7 @@ st.markdown("""
     width: 80px; /* 動物画像のサイズ */
     height: 80px;
     border-radius: 10px; /* 動物画像の角を少し丸める */
-}
+}        
 </style>
 """, unsafe_allow_html=True)
 
