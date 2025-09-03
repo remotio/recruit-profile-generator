@@ -1,6 +1,7 @@
 import streamlit as st
-from profile_manager import ProfileManager
+from datetime import datetime
 
+# コンポーネントの取得
 supabase_client=st.session_state.supabase_client
 profile_manager=st.session_state.profile_manager
 current_user=st.session_state.user
@@ -35,56 +36,79 @@ def display_profile_detail(profile_id: str):
     """
     指定されたIDのプロフィール詳細をモーダル内に描画する関数コンポーネント
     """
-    profile = profile_manager.get_profile_by_id(profile_id)
 
-    if not profile:
-        st.error("プロファイルが見つかりませんでした。")
+    try:
+        profile = profile_manager.get_profile_by_id(profile_id)
+    except Exception as e:
+        st.error(f"プロフィールの取得中にエラーが発生しました: {e}")
         return
+    
+    col1,col2=st.columns([1,2])
 
-    left_col, right_col = st.columns([2, 3])
+    with col1:
+        st.image(
+            profile.get('profile_image_url', 'https://placehold.co/150x150/EFEFEF/333333?text=No+Img'),
+            width=150
+        )
+        st.image(
+            profile.get('animal_image_url', 'https://placehold.co/80x80/cccccc/333333?text=Animal'),
+            width=80
+        )
 
-    with left_col:
-        st.markdown(f"""
-        <img class="left-col-image" src="{profile.get('profile_image_url', 'https://placehold.co/150x150/EFEFEF/333333?text=No+Img')}">
-        """, unsafe_allow_html=True)
-
-    with right_col:
-        animal_result = profile.get('animal_result', {})
-        st.markdown(f"""
-        <div class="right-col-content">
-            <h2>{profile.get('nickname', 'No Name')}</h2>
-            <h4>{animal_result.get('name', '')}</h4>
-            <img src="{profile.get('animal_image_url', 'https://placehold.co/80x80/cccccc/333333?text=AI')}">
-        </div>
-        """, unsafe_allow_html=True)
-
-
-    st.write("")
+    with col2:
+        st.subheader(profile.get('nickname', 'No Name'))
+        full_name=f"{profile.get('last_name','')} {profile.get('first_name','')}"
+        st.markdown(f"<p style='color: grey; margin-top: -10px;'>{full_name}</p>", unsafe_allow_html=True)
+        st.caption(f"{profile.get('catchphrase', '')}")
+        tags=profile.get('tags',[])
+        if tags:
+            tag_spans="".join([f"<span style='background-color:#F0F2F6; border-radius:5px; padding:2px 6px; margin-right:4px;'>#{tag.lstrip('#')}</span>" for tag in tags])
+            st.markdown(tag_spans, unsafe_allow_html=True)
+            
     st.divider()
 
-    intro_comment = profile.get('generated_profile', {}).get('introduction_comment', '自己紹介文がありません。')
-    st.markdown(intro_comment)
+    # 自己紹介
+    st.markdown("#### 自己紹介")
+    st.write(profile.get('introduction_text','自己紹介文がありません。'))
+    # 動物診断結果
+    with st.container(border=True):
+        animal_col,reason_col=st.columns([2,3])
+        with animal_col:
+            st.markdown(f"**{profile.get('animal_category', 'カテゴリ未分類')}**")
+            animal_name=profile.get('animal_name', '診断中...')
+            if animal_name is '診断中...':
+                html_content = f"""
+                <div style="margin-top: -10px;">
+                  <span style="font-size: 1.75em; font-weight: 600; color: grey;">診断中...</span>
+                </div>
+                """
+            else:
+                st.markdown(f"""
+                <div style="display: flex; align-items: baseline; margin-top: -10px;">
+                    <span style="font-size: 1.75em; font-weight: 600; margin-right: 5px; line-height: 1.2;">{animal_name}</span>
+                    <span style="font-size: 0.8em; color: grey;">タイプ</span>
+                </div>
+                """, unsafe_allow_html=True)
+        with reason_col:
+            st.write(profile.get('animal_reason',''))
     st.write("")
-
-    basic_info = profile.get('generated_profile', {}).get('basic_info', {})
-    talk_topics = profile.get('generated_profile', {}).get('talk_topics', {})
-    
-    details_col1, details_col2 = st.columns(2)
-    with details_col1:
-        st.markdown(f"**大学**")
-        st.write(f"{basic_info.get('university', '未設定')} / {basic_info.get('department', '未設定')}")
-        st.markdown(f"**話すと嬉しくなること**")
-        st.write(talk_topics.get('happy_topic', '未設定'))
-    with details_col2:
-        st.markdown(f"**出身地**")
-        st.write(basic_info.get('hometown', '未設定'))
-        st.markdown(f"**ちょっと詳しいこと**")
-        st.write(talk_topics.get('expert_topic', '未設定'))
-    
-    st.write("") 
-
-
-    tags = profile.get('generated_profile', {}).get('tags', [])
-    if tags:
-        tag_html = " ".join([f"`#{tag.lstrip('#')}`" for tag in tags])
-        st.markdown(f"**タグ:** {tag_html}")
+    # 詳細情報
+    st.markdown("#### 詳細情報")
+    colA,colB=st.columns(2)
+    with colA:
+        birth_date_str = profile.get('birth_date')
+        if birth_date_str:
+            # 1. まず、どの環境でも動作するstrptimeで日付オブジェクトに変換
+            dt_obj = datetime.strptime(birth_date_str, '%Y-%m-%d')
+            
+            # 2. f-stringで直接、月と日の数値を文字列に埋め込む
+            birth_date_formatted = f"{dt_obj.month}月{dt_obj.day}日"
+        else:
+            birth_date_formatted = '未設定'
+        st.markdown(f"**誕生日:**  {birth_date_formatted}")
+        st.markdown(f"**出身地:**  {profile.get('hometown', '未設定')}")
+        st.markdown(f"**大学:**  {profile.get('university', '未設定')}")
+    with colB:
+        st.markdown(f"**趣味:** {', '.join(profile.get('hobbies', []))}")
+        st.markdown(f"**話したいこと:** {profile.get('happy_topic', '未設定')}")
+        st.markdown(f"**詳しいこと:** {profile.get('expert_topic', '未設定')}")
