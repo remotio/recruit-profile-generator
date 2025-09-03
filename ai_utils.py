@@ -1,18 +1,15 @@
 import google.generativeai as genai
 import json
-import os  # osを追加
 from dotenv import load_dotenv  # dotenvを追加
 from typing import Dict, Any, List
 from dict_types import UserInput 
-
-# .envファイルから環境変数を読み込む
-load_dotenv()
+import streamlit as st
 
 # --- 初期設定 ---
 # os.getenvを使って.envファイルからAPIキーを安全に読み込む
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 if not GEMINI_API_KEY:
-    raise ValueError("エラー: GEMINI_API_KEYが.envファイルに設定されていません。")
+    raise ValueError("エラー: GEMINI_API_KEYが.streamlit/secrets.tomlファイルに設定されていません。")
 genai.configure(api_key=GEMINI_API_KEY)
 
 # 使用するモデルを定義
