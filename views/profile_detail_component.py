@@ -50,10 +50,6 @@ def display_profile_detail(profile_id: str):
             profile.get('profile_image_url', 'https://placehold.co/150x150/EFEFEF/333333?text=No+Img'),
             width=150
         )
-        st.image(
-            profile.get('animal_image_url', 'https://placehold.co/80x80/cccccc/333333?text=Animal'),
-            width=80
-        )
 
     with col2:
         st.subheader(profile.get('nickname', 'No Name'))
@@ -67,31 +63,42 @@ def display_profile_detail(profile_id: str):
             
     st.divider()
 
-    # 自己紹介
-    st.markdown("#### 自己紹介")
-    st.write(profile.get('introduction_text','自己紹介文がありません。'))
     # 動物診断結果
     with st.container(border=True):
-        animal_col,reason_col=st.columns([2,3])
-        with animal_col:
+        animal_icon_col, animal_text_col = st.columns([0.5, 3]) # アイコンとテキストの比率
+
+        with animal_icon_col:
+            # 動物の画像をアイコンとして表示
+            st.image(
+                profile.get('animal_image_url', 'https://placehold.co/60x60/cccccc/333333?text=AI'),
+                width=45 # 小さなアイコンサイズ
+            )
+
+        with animal_text_col:
             st.markdown(f"**{profile.get('animal_category', 'カテゴリ未分類')}**")
-            animal_name=profile.get('animal_name', '診断中...')
-            if animal_name is '診断中...':
+            
+            animal_name = profile.get('animal_name')
+            if animal_name:
+                html_content = f"""
+                <div style="display: flex; align-items: baseline; margin-top: -10px;">
+                  <span style="font-size: 1.5em; font-weight: 600; margin-right: 5px; line-height: 1.2;">{animal_name}</span>
+                  <span style="font-size: 0.8em; color: grey;">タイプ</span>
+                </div>
+                """
+            else:
                 html_content = f"""
                 <div style="margin-top: -10px;">
                   <span style="font-size: 1.75em; font-weight: 600; color: grey;">診断中...</span>
                 </div>
                 """
-            else:
-                st.markdown(f"""
-                <div style="display: flex; align-items: baseline; margin-top: -10px;">
-                    <span style="font-size: 1.75em; font-weight: 600; margin-right: 5px; line-height: 1.2;">{animal_name}</span>
-                    <span style="font-size: 0.8em; color: grey;">タイプ</span>
-                </div>
-                """, unsafe_allow_html=True)
-        with reason_col:
-            st.write(profile.get('animal_reason',''))
-    st.write("")
+            st.markdown(html_content, unsafe_allow_html=True)
+            
+    st.write("") # スペース
+
+    # 自己紹介
+    st.markdown("#### 自己紹介")
+    st.write(profile.get('introduction_text','自己紹介文がありません。'))
+
     # 詳細情報
     st.markdown("#### 詳細情報")
     colA,colB=st.columns(2)
