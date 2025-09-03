@@ -6,7 +6,7 @@ from dict_types import UserInput
 import streamlit as st
 
 # --- 初期設定 ---
-# os.getenvを使って.envファイルからAPIキーを安全に読み込む
+# APIキーを安全に読み込む
 GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 if not GEMINI_API_KEY:
     raise ValueError("エラー: GEMINI_API_KEYが.streamlit/secrets.tomlファイルに設定されていません。")
@@ -105,11 +105,11 @@ def classify_animal_type(profile_data: UserInput) -> Dict[str, str]:
         最も適切な動物を {ANIMAL_CANDIDATES} から1つ選び，理由も述べてください。
 
         カテゴリ:
-        1. リーダーシップ全開タイプ
-        2. 頭脳派・ミステリアスタイプ
-        3. ムードメーカー・元気いっぱいタイプ
-        4. 癒し系・ほんわかタイプ
-        5. 自由人・マイペースタイプ
+        リーダーシップ全開タイプ
+        頭脳派・ミステリアスタイプ
+        ムードメーカー・元気いっぱいタイプ
+        癒し系・ほんわかタイプ
+        自由人・マイペースタイプ
 
         出力形式は必ずJSONで:
         {{
