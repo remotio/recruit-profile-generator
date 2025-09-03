@@ -4,7 +4,7 @@ import supabase_utils
 import ai_utils
 import embedding_generator
 from typing import List,Dict,Any
-from dict_types import UserInput,EditableGeneratedProfile,FullUserProfile 
+from dict_types import UserInput,EditableGeneratedProfile
 
 
 
