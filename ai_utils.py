@@ -205,9 +205,8 @@ def create_conversation_starters(profile_a: Dict[str, Any], profile_b: Dict[str,
 """
     
     try:
-        conv_starter_model=genai.GenerativeModel('gemini-1.5-flash')
         # 3. Gemini APIを呼び出してテキスト生成
-        response = conv_starter_model.generate_content(prompt)
+        response = text_generation_model.generate_content(prompt)
         ai_response_text = response.text
         
         # 4. AIの返事からJSON部分だけを賢く抜き出す
@@ -227,15 +226,14 @@ def create_conversation_starters(profile_a: Dict[str, Any], profile_b: Dict[str,
 
 # --- ここからがテスト用のコードです ---
 if __name__ == '__main__':
+    # --- テスト1: 自己紹介文の生成 ---
+    print("--- Test 1: 自己紹介文の生成を開始します... ---")
     test_user_input_saki = {
         "last_name": "山田", "first_name": "さき", "nickname": "さき",
         "birth_date": "2002-08-10", "university": "福岡大学", "hometown": "福岡県",
         "hobbies": ["カフェ巡り", "映画鑑賞"], "happy_topic": "おすすめの映画について",
         "expert_topic": "美味しいコーヒーの淹れ方"
     }
-    '''
-    # --- テスト1: 自己紹介文の生成 ---
-    print("--- Test 1: 自己紹介文の生成を開始します... ---")
     generated_data = generate_introduction_text(test_user_input_saki)
     print("\n--- AIからのレスポンス (自己紹介文) ---")
     import pprint
@@ -247,7 +245,7 @@ if __name__ == '__main__':
     animal_data = classify_animal_type(test_user_input)
     pprint.pprint(animal_data)
     print("--------------------------")
-    '''
+
     # --- テスト3: 会話のきっかけ生成 ---
     print("\n--- Test 3: 会話のきっかけ生成を開始します... ---")
     # 2人目のテストユーザーを定義
@@ -261,5 +259,5 @@ if __name__ == '__main__':
     # 新しい関数を呼び出す
     conversation_starters = create_conversation_starters(test_user_input_saki, test_user_input_rimo)
     print("\n--- AIからのレスポンス (会話のきっかけ) ---")
-    print(conversation_starters)
+    pprint.pprint(conversation_starters)
     print("-" * 30)
