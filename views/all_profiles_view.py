@@ -6,9 +6,6 @@ import os
 from datetime import datetime
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
-from views.profile_detail_component import display_profile_detail
-
-
 supabase_client=st.session_state.supabase_client
 profile_manager=st.session_state.profile_manager
 current_user=st.session_state.user
@@ -137,12 +134,12 @@ def render_profile_card(profile:dict,target_col):
 
                 # 動物診断結果
                 with st.container(border=True):
-                    animal_icon_col, animal_text_col = st.columns([0.5, 3]) # アイコンとテキストの比率
+                    animal_icon_col, animal_text_col = st.columns([1, 2]) # アイコンとテキストの比率
 
                     with animal_icon_col:
                         # 動物の画像をアイコンとして表示
                         st.image(
-                            profile.get('animal_image_url', 'https://placehold.co/60x60/cccccc/333333?text=AI'),
+                            profile.get('animal_image_url', 'https://placehold.co/60x60/cccccc/333333?text=Animal'),
                             width=45 # 小さなアイコンサイズ
                         )
 
@@ -218,7 +215,6 @@ def render_profile_card(profile:dict,target_col):
 
                 # 3. セッションステートにデータがあれば、常に表示する
                 starters_data = st.session_state[f'conv_starter_{profile.get("id")}']
-                print(starters_data)
                 if starters_data:
                     if "error" in starters_data:
                         st.error(f"ヒントの生成に失敗しました: {starters_data['error']}")

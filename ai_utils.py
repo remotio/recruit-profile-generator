@@ -206,7 +206,9 @@ def create_conversation_starters(profile_a: Dict[str, Any], profile_b: Dict[str,
     
     try:
         # 3. Gemini APIを呼び出してテキスト生成
-        response = text_generation_model.generate_content(prompt)
+        # 応答時間の関係で，1.5-flashを使用
+        conv_starter_model = genai.GenerativeModel('gemini-2.5-flash')
+        response = conv_starter_model.generate_content(prompt)
         ai_response_text = response.text
         
         # 4. AIの返事からJSON部分だけを賢く抜き出す
