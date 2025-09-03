@@ -20,13 +20,3 @@ class EditableGeneratedProfile(TypedDict):
     introduction_text: str
     catchphrase: str
     tags: List[str]
-class FullUserProfile(UserInput,EditableGeneratedProfile):
-    """
-        ユーザーのプロフィール情報を全て含む辞書の定義，
-        UserInput 及び EditableGeneratedProfile を継承している
-    """
-    id: str
-    created_at: str
-    animal_name: str
-    animal_reason: str
-    embedding: List[float]
