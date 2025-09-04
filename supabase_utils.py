@@ -221,4 +221,27 @@ def delete_memo(supabase:Client,author_id:str,target_id:str)->None:
     except Exception as e:
         print(f"メモの削除中にエラーが発生しました: {e}")
         raise ValueError("メモの削除に失敗しました。") from e
+def upload_file_and_get_url(supabase:Client,bucket_name:str,file_path:str,file_body:bytes)->str:
+    """
+    指定されたバケットにファイルをアップロードし、その公開URLを取得する。
+
+    Args:
+        supabase: Supabaseクライアントのインスタンス
+        bucket_name: ファイルをアップロードするバケットの名前
+        file_path: バケット内でのファイルのパス（例: "images/photo.jpg"）
+        file_data: アップロードするファイルのバイナリデータ
+
+    Returns:
+        アップロードされたファイルの公開URL
+    """
+    try:
+        # ファイルをアップロード
+        response = supabase.storage.from_(bucket_name).upload(file=file_body, path=file_path)
+        # アップロードしたファイルの公開URLを取得
+        response=supabase.storage.from_(bucket_name).get_public_url(file_path)
+        return response
+    except Exception as e:
+        print(f"ファイルのアップロード中にエラーが発生しました: {e}")
+        raise ValueError("ファイルのアップロードに失敗しました。") from e
+
 

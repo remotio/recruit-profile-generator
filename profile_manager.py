@@ -197,3 +197,22 @@ class ProfileManager:
         現在ログインしているユーザーが，対象ユーザーについて書いたメモを削除する．
         """
         return supabase_utils.delete_memo(self.db_client,current_user_id,target_user_id)
+    def upload_profile_image(self,user_id:str,file_body,file_name:str)->str:
+        """
+        プロフィール画像をSupabase Storageにアップロードし，その公開URLを取得する．
+        """
+        # public/ユーザID/ファイル名のパス
+        file_path=f"{user_id}/{file_name}"
+        # supabase_utilsの関数を呼び出し，アップロード&URL取得
+        public_url=supabase_utils.upload_file_and_get_url(
+            supabase=self.db_client,
+            bucket_name="profile-images",
+            file_path=file_path,
+            file_body=file_body
+        )
+        return public_url
+    def assign_animal_image_url(self,animal_name:str)->str:
+        """
+        動物名から，対応する画像のパスを返す．
+        """
+        return f"animal_images/{animal_name}.png"
