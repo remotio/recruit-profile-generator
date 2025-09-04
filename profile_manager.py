@@ -181,3 +181,19 @@ class ProfileManager:
             print(f"会話のきっかけ生成中にエラーが発生しました: {e}")
             raise ValueError("会話のきっかけ生成に失敗しました。") from e
 
+    def get_memo_for_target(self, current_user_id: str, target_user_id: str) -> Dict[str, Any] | None:
+        """
+        現在ログインしているユーザーが、対象ユーザーについて書いたメモを取得する。
+        """
+        return supabase_utils.get_memo(self.db_client, current_user_id, target_user_id)
+    def save_memo(self,current_user_id:str,target_user_id:str,content:str)->Dict[str,Any]:
+        """
+        現在ログインしているユーザーが,対象ユーザーについてメモを保存する.
+
+        """
+        return supabase_utils.upsert_memo(self.db_client,current_user_id,target_user_id,content)
+    def delete_memo(self,current_user_id:str,target_user_id:str)->None:
+        """
+        現在ログインしているユーザーが，対象ユーザーについて書いたメモを削除する．
+        """
+        return supabase_utils.delete_memo(self.db_client,current_user_id,target_user_id)

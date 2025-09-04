@@ -229,3 +229,45 @@ def render_profile_card(profile:dict,target_col):
                             if starters_data.get("topics"):
                                 for topic in starters_data["topics"]:
                                     st.info(topic)
+                st.divider()
+                st.markdown("#### このユーザーに関するメモ")
+
+                current_user_id = st.session_state.user['id']
+                target_user_id = profile['id']
+
+                # 1. 既存のメモを取得して表示
+                try:
+                    existing_memo = profile_manager.get_memo_for_target(current_user_id, target_user_id)
+                    memo_content = existing_memo['content'] if existing_memo else ""
+                except Exception as e:
+                    st.error(f"メモの読み込みに失敗しました: {e}")
+                    memo_content = "" # エラー時は空にする
+
+                # 2. メモ入力用のテキストエリアを配置
+                new_memo = st.text_area(
+                    "メモを編集:", 
+                    value=memo_content, 
+                    key=f"memo_{profile['id']}",
+                    height=150
+                )
+
+                # 3. 保存ボタンと削除ボタンを横並びに配置
+                col_save, col_delete = st.columns(2)
+                with col_save:
+                    if st.button("メモを保存", key=f"save_memo_{profile['id']}", use_container_width=True):
+                        try:
+                            profile_manager.save_memo(current_user_id, target_user_id, new_memo)
+                            st.success("メモを保存しました。")
+                            # ページをリロードして、表示を最新の状態に更新
+                            st.rerun() 
+                        except Exception as e:
+                            st.error(f"メモの保存に失敗しました: {e}")
+                
+                with col_delete:
+                    if st.button("メモを削除", key=f"delete_memo_{profile['id']}", use_container_width=True):
+                        try:
+                            profile_manager.delete_memo(current_user_id, target_user_id)
+                            st.success("メモを削除しました。")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"メモの削除に失敗しました: {e}")

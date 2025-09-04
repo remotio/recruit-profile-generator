@@ -175,16 +175,27 @@ def sign_in(supabase:Client,email:str,password:str)->Dict[str,Any]:
     except Exception as e:
         print(f"ログイン中にエラーが発生しました: {e}")
         raise ValueError("ログインに失敗しました。") from e
-def get_memo(supabase:Client,author_id:str,target_id)->Dict[str,Any]:
+def get_memo(supabase: Client, author_id: str, target_id: str) -> Dict[str, Any] | None:
     """
-    author_idからtarget_idへのメモを取得する．
+    特定の一人のユーザーが，別のユーザーについて書いたメモを取得する．
+    メモが存在しない場合はNoneを返す．
     """
     try:
-        response=supabase.table('memos').select("*").eq('author_id',author_id).eq('target_id',target_id).single().execute()
-        return response.data
+        response = supabase.table('memos').select("*") \
+            .eq('author_id', author_id) \
+            .eq('target_id', target_id) \
+            .execute()
+
+        # 結果のリストにデータが含まれていれば，最初の要素（辞書）を返す
+        if response.data:
+            return response.data[0]
+        # データがなければ（メモが存在しなければ）Noneを返す
+        else:
+            return None
+            
     except Exception as e:
         print(f"メモの取得中にエラーが発生しました: {e}")
-        raise ValueError("メモの取得に失敗しました。") from e
+        raise ValueError("メモの取得中にエラーが発生しました。") from e
 def upsert_memo(supabase:Client,author_id:str,target_id:str,memo_text:str)->Dict[str,Any]:
     """
     author_idからtarget_idへのメモを追加または更新する．
@@ -193,7 +204,7 @@ def upsert_memo(supabase:Client,author_id:str,target_id:str,memo_text:str)->Dict
         response=supabase.table('memos').upsert({
             "author_id":author_id,
             "target_id":target_id,
-            "memo":memo_text
+            "content":memo_text
         },on_conflict='author_id,target_id').execute()
         if not response.data:
             raise ValueError("メモの追加または更新に失敗しました。")
