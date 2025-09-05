@@ -244,4 +244,19 @@ def upload_file_and_get_url(supabase:Client,bucket_name:str,file_path:str,file_b
         print(f"ファイルのアップロード中にエラーが発生しました: {e}")
         raise ValueError("ファイルのアップロードに失敗しました。") from e
 
+def update_profile_url(supabase: Client, user_id: str, image_url: str) -> List[Dict[str, Any]]:
+    """
+    指定されたユーザーのprofile_image_urlを更新する．
+    """
+    try:
+        response = supabase.table('profiles').update({
+            "profile_image_url": image_url
+        }).eq('id', user_id).execute()
+        
+        if not response.data:
+            raise ValueError("プロフィール画像のURL更新に失敗しました。")
+        return response.data
+    except Exception as e:
+        print(f"プロフィール画像のURL更新中にエラーが発生しました: {e}")
+        raise ValueError("プロフィール画像のURL更新に失敗しました。") from e
 

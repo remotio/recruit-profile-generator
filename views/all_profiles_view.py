@@ -104,23 +104,40 @@ def render_profile_card(profile:dict,target_col):
     with target_col:
         with st.container(border=True):
             # --- プロフィールカードのヘッダー部分 ---
+            # 1. 表示するURLを事前に決定する
+            profile_img_url = profile.get('profile_image_url')
+            if not profile_img_url:
+                profile_img_url = 'https://placehold.co/100x100/EFEFEF/333333?text=No+Img'
+            # 動物の名前を取得
+            animal_name_card = profile.get('animal_name')
+            # 動物名から画像データ(Base64)を取得
+            if animal_name_card:
+                animal_image_data_card = profile_manager.assign_animal_image_url(animal_name_card)
+            else:
+                animal_image_data_card = 'https://placehold.co/40x40/cccccc/333333?text=AI'
+
             st.markdown(f"""
             <div class="card-top-content">
                  <div class="image-container">
-                            <img class="profile-image" src="{profile.get('profile_image_url', 'https://placehold.co/100x100/EFEFEF/333333?text=No+Img')}">
-                            <img class="animal-image" src="{profile.get('animal_image_url', 'https://placehold.co/40x40/cccccc/333333?text=AI')}">
-                        </div>
-                        <h4 style='text-align: center; margin-bottom: 0.25rem;'>{profile['nickname']}</h4>
-                        <p style='text-align: center; color: grey; font-size: 0.9em;'>{profile.get('university', '')} / {profile.get('department', '')}</p>
+                    <img class="profile-image" src="{profile_img_url}">
+                    <img class="animal-image" src="{animal_image_data_card}">
+                </div>
+                <h4 style='text-align: center; ...'>{profile['nickname']}</h4>
+                <p style='text-align: center; ...'>{profile.get('university', '')} / {profile.get('department', '')}</p>
             </div>
             """, unsafe_allow_html=True)
+
 
             # --- 詳細表示用のExpander ---
             with st.expander("もっと見る"):
                 # 詳細ヘッダー
                 col1, col2 = st.columns([1, 2])
                 with col1:
-                    st.image(profile.get('profile_image_url', 'https://placehold.co/150x150/EFEFEF/333333?text=No+Img'), width=150)
+                    image_url=profile.get('profile_image_url')
+                    if image_url and image_url.startswith('http'):
+                        st.image(image_url, width=150)
+                    else:
+                        st.image('https://placehold.co/150x150/EFEFEF/333333?text=No+Img', width=150)
                 with col2:
                     st.subheader(profile.get('nickname', 'No Name'))
                     full_name=f"{profile.get('last_name','')} {profile.get('first_name','')}"
@@ -137,11 +154,16 @@ def render_profile_card(profile:dict,target_col):
                     animal_icon_col, animal_text_col = st.columns([1, 2]) # アイコンとテキストの比率
 
                     with animal_icon_col:
-                        # 動物の画像をアイコンとして表示
-                        st.image(
-                            profile.get('animal_image_url', 'https://placehold.co/60x60/cccccc/333333?text=Animal'),
-                            width=45 # 小さなアイコンサイズ
-                        )
+                        # 1. 動物の名前を取得
+                        animal_name_detail = profile.get('animal_name')
+                        # 2. 動物名から画像データ(Base64)を取得
+                        if animal_name_detail:
+                            animal_image_data_detail = profile_manager.assign_animal_image_url(animal_name_detail)
+                        else:
+                            animal_image_data_detail = 'https://placehold.co/60x60/cccccc/333333?text=Animal'
+                        
+                        # 3. 取得した画像データを表示
+                        st.image(animal_image_data_detail, width=45)
 
                     with animal_text_col:
                         st.markdown(f"**{profile.get('animal_category', 'カテゴリ未分類')}**")
