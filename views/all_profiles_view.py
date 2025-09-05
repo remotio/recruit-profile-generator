@@ -4,6 +4,7 @@ from streamlit_modal import Modal
 import sys
 import os
 from datetime import datetime
+import random
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 supabase_client=st.session_state.supabase_client
@@ -79,7 +80,31 @@ def render_page():
 
     st.subheader("みんなのプロフィール", divider="blue")
 
-    modal = Modal("", key="profile-modal", padding=20, max_width=700)
+    with st.spinner("あなたにぴったりの人を探しています..."):
+        try:
+            # 1. 自分に似ているユーザーを10人取得する
+            similar_profiles = profile_manager.find_similar_profiles(st.session_state.user['id'])
+            
+            # 表示する類似ユーザーを格納するリスト
+            suggested_profiles = []
+            if similar_profiles:
+                # 2. 10人の中からランダムに表示する人を決める（最大二人）
+                sample_count = min(len(similar_profiles), 2)
+                suggested_profiles = random.sample(similar_profiles, k=sample_count)
+
+            # 3. 類似ユーザーを表示するセクション
+            if suggested_profiles:
+                st.markdown("##### 💡 あなたと属性が近いかも...？")
+                cols = st.columns(len(suggested_profiles)) # 1人なら1列、2人なら2列
+                for i, profile in enumerate(suggested_profiles):
+                    # 既存のカード描画関数を再利用
+                    render_profile_card(profile, cols[i])
+                st.divider()
+
+        except Exception as e:
+            # 類似ユーザー検索に失敗しても、ページ全体が停止しないようにする
+            st.toast(f"類似ユーザーの取得に失敗しました: {e}", icon="⚠️")
+            suggested_profiles = [] # エラー時は空にする
 
     with st.spinner("みんなのプロフィールを読み込んでいます..."):
         try:
@@ -91,8 +116,12 @@ def render_page():
     if not profiles:
         st.info("まだ誰も登録していません。")
     else:
+        # 1. 提案セクションに表示されたユーザーのIDのセットを作成
+        suggested_ids = {p['id'] for p in suggested_profiles}
+        # 2. メインの一覧から、提案済みのユーザーを除外する
+        main_list_profiles = [p for p in profiles if p['id'] not in suggested_ids]
         cols = st.columns(2)
-        for i, profile in enumerate(profiles):
+        for i, profile in enumerate(main_list_profiles):
             target_col = cols[i % 2]
             # 関数を呼び出してカードを描画
             render_profile_card(profile, target_col)
