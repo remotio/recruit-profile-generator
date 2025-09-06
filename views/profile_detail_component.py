@@ -1,7 +1,6 @@
 import streamlit as st
 from datetime import datetime
 
-
 st.markdown("""
 <style>     
 .left-col-image {
@@ -28,13 +27,13 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-def display_profile_detail(profile: dict):
+# --- 修正: managerを引数として受け取るように変更 ---
+def display_profile_detail(profile: dict, manager):
     """
     指定されたプロフィール辞書の詳細を描画する関数コンポーネント。
-    ネストされたデータ構造とフラットなデータ構造の両方に対応。
+    managerを使って動物の画像を動的に生成する。
     """
     
-    # --- データを取得するための準備 ---
     gen_profile = profile.get('generated_profile', {})
     basic_info = gen_profile.get('basic_info', {})
     talk_topics = gen_profile.get('talk_topics', {})
@@ -51,7 +50,6 @@ def display_profile_detail(profile: dict):
     with col2:
         st.subheader(profile.get('nickname', 'No Name'))
         
-        # ### 修正 ### `basic_info` とトップレベルの両方から姓・名を取得
         last_name_val = basic_info.get("last_name") or profile.get("last_name", "")
         first_name_val = basic_info.get("first_name") or profile.get("first_name", "")
         full_name=f"{last_name_val} {first_name_val}"
@@ -70,39 +68,35 @@ def display_profile_detail(profile: dict):
         animal_icon_col, animal_text_col = st.columns([0.5, 3]) 
 
         with animal_icon_col:
-            st.image(
-                profile.get('animal_image_url', 'https://placehold.co/60x60/cccccc/333333?text=AI'),
-                width=45 
-            )
+            # --- 修正: managerを使って動物の画像を生成 ---
+            animal_name_val = animal_result.get("name") or profile.get("animal_name")
+            if animal_name_val:
+                animal_image_data = manager.assign_animal_image_url(animal_name_val)
+            else:
+                animal_image_data = 'https://placehold.co/60x60/cccccc/333333?text=AI'
+            st.image(animal_image_data, width=45)
 
         with animal_text_col:
             category = animal_result.get('category') or profile.get('animal_category', 'カテゴリ未分類')
             st.markdown(f"**{category}**")
             
-            animal_name = animal_result.get('name') or profile.get('animal_name')
-            if animal_name:
+            if animal_name_val:
                 html_content = f"""
                 <div style="display: flex; align-items: baseline; margin-top: -10px;">
-                  <span style="font-size: 1.5em; font-weight: 600; margin-right: 5px; line-height: 1.2;">{animal_name}</span>
+                  <span style="font-size: 1.5em; font-weight: 600; margin-right: 5px; line-height: 1.2;">{animal_name_val}</span>
                   <span style="font-size: 0.8em; color: grey;">タイプ</span>
                 </div>
                 """
             else:
-                html_content = f"""
-                <div style="margin-top: -10px;">
-                  <span style="font-size: 1.75em; font-weight: 600; color: grey;">診断中...</span>
-                </div>
-                """
+                html_content = "<div style='margin-top: -10px;'><span style='font-size: 1.75em; font-weight: 600; color: grey;'>診断中...</span></div>"
             st.markdown(html_content, unsafe_allow_html=True)
             
     st.write("") 
 
-    # 自己紹介
     introduction_text = gen_profile.get('introduction_comment') or profile.get('introduction_text', '自己紹介文がありません。')
     st.markdown("#### 自己紹介")
     st.write(introduction_text)
 
-    # 詳細情報
     st.markdown("#### 詳細情報")
     colA,colB=st.columns(2)
     with colA:
@@ -135,8 +129,5 @@ def display_profile_detail(profile: dict):
         st.markdown(f"**詳しいこと:** {expert_topic}")
 
 def render_profile_card(profile: dict,target_col):
-    """
-    プロフィールカードを描画する関数
-    """
     st.markdown(f"### {profile.get('nickname', 'No Name')}")
 

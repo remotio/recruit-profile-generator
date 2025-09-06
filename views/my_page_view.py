@@ -9,11 +9,13 @@ def render_page():
     ログイン中のユーザーのプロフィールを常に表示・編集する。
     """
     
+    # --- セットアップ ---
     manager = st.session_state.profile_manager
     current_login_user_id = st.session_state.user['id']
     
     st.subheader("マイページ", divider="blue")
 
+    # --- プロフィールデータの取得 ---
     try:
         current_user_profile = manager.get_profile_by_id(current_login_user_id)
     except Exception as e:
@@ -28,6 +30,7 @@ def render_page():
     if 'edit_mode' not in st.session_state:
         st.session_state.edit_mode = False
 
+    # --- 表示モードと編集モードの切り替え ---
 
     # (1) 表示モード
     if not st.session_state.edit_mode:
@@ -36,7 +39,7 @@ def render_page():
         if 'edit_tags' in st.session_state:
             del st.session_state.edit_tags
 
-        display_profile_detail(current_user_profile) 
+        display_profile_detail(current_user_profile, manager) 
         
         if st.button("プロフィールを編集する", type="primary"):
             st.session_state.edit_mode = True
@@ -44,6 +47,7 @@ def render_page():
 
     # (2) 編集モード
     else:
+        # --- 編集フォームの準備 ---
         if 'edit_hobbies' not in st.session_state:
             hobbies_from_top_level = current_user_profile.get("hobbies", [])
             if hobbies_from_top_level:
@@ -136,14 +140,43 @@ def render_page():
 
         with tab3:
             st.subheader("画像とキャラクター")
-            profile_image_url = st.text_input("プロフィール画像URL", value=current_user_profile.get("profile_image_url", ""), key="profile_image_url")
-            animal_image_url = st.text_input("動物アバター画像URL", value=current_user_profile.get("animal_image_url", ""), key="animal_image_url")
+            
+            st.markdown("**プロフィール画像**")
+            current_image_url = current_user_profile.get("profile_image_url", "")
+            if current_image_url:
+                st.image(current_image_url, width=150)
+            
+            uploaded_file = st.file_uploader(
+                "新しい画像をアップロード", 
+                type=["png", "jpg", "jpeg"], 
+                key="uploaded_image"
+            )
+            
             st.markdown("---")
+            st.markdown("**動物アバター（AIによる自動生成）**")
             animal_name_val = animal_result.get("name") or current_user_profile.get("animal_name", "")
-            animal_name = st.text_input("動物名", value=animal_name_val, key="animal_name")
+            if animal_name_val:
 
-            animal_reason_val = animal_result.get("reason") or current_user_profile.get("animal_reason", "")
-            animal_reason = st.text_area("その動物である理由", value=animal_reason_val, key="animal_reason")
+                col_img, col_text = st.columns([1, 3])
+                with col_img:
+                    animal_image_data = manager.assign_animal_image_url(animal_name_val)
+                    st.image(animal_image_data, width=80)
+                
+                with col_text:
+                    category = animal_result.get('category') or current_user_profile.get('animal_category', 'カテゴリ未分類')
+                    st.markdown(f"**{category}**")
+                    
+                    html_content = f"""
+                    <div style="display: flex; align-items: baseline; margin-top: 0px;">
+                      <span style="font-size: 1.5em; font-weight: 600; margin-right: 5px; line-height: 1.2;">{animal_name_val}</span>
+                    </div>
+                    """
+                    st.markdown(html_content, unsafe_allow_html=True)
+
+                reason = animal_result.get("reason") or current_user_profile.get("animal_reason", "")
+                st.info(reason)
+            else:
+                st.caption("動物タイプはプロフィール作成時にAIによって自動生成されます。")
 
         st.markdown("---")
         
@@ -151,19 +184,38 @@ def render_page():
         with col_save:
             if st.button("変更を保存する", use_container_width=True, type="primary"):
                 with st.spinner("プロフィールを更新しています..."):
+                    
+                    new_profile_image_url = current_user_profile.get("profile_image_url", "") 
+                    if uploaded_file is not None:
+                        file_bytes = uploaded_file.getvalue()
+                        try:
+                            new_profile_image_url = manager.upload_profile_image(
+                                user_id=current_login_user_id,
+                                file_body=file_bytes,
+                                file_name=uploaded_file.name
+                            )
+                            st.toast("画像をアップロードしました！", icon="🎉")
+                        except Exception as e:
+                            st.error(f"画像のアップロードに失敗しました: {e}")
+                            st.stop()
+                    
                     hobbies_list = [h.strip() for h in st.session_state.edit_hobbies if h.strip()]
                     tags_list = [t.strip() for t in st.session_state.edit_tags if t.strip()]
                     
                     updated_data = {
                         "id": current_login_user_id,
-                        "last_name": st.session_state.last_name, "first_name": st.session_state.first_name, 
+                        "last_name": st.session_state.last_name, 
+                        "first_name": st.session_state.first_name, 
                         "nickname": st.session_state.nickname,
                         "university": st.session_state.university, 
                         "department": st.session_state.department, 
                         "hometown": st.session_state.hometown,
                         "birth_date": st.session_state.birth_date.strftime("%Y-%m-%d") if st.session_state.birth_date else "",
-                        "hobbies": hobbies_list, "tags": tags_list,
-                        "happy_topic": st.session_state.happy_topic, "expert_topic": st.session_state.expert_topic,
+                        "hobbies": hobbies_list, 
+                        "tags": tags_list,
+                        "happy_topic": st.session_state.happy_topic, 
+                        "expert_topic": st.session_state.expert_topic,
+                        "profile_image_url": new_profile_image_url,
                     }
                     manager.update_user_input(current_login_user_id, updated_data)
 
