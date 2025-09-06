@@ -67,7 +67,7 @@ def render_page():
                 current_user_id=st.session_state.user['id']
                 BASE_URL="https://recruit-profile-gen.streamlit.app"
                 # QRコードに含めるURLを生成
-                my_profile_url = f"{BASE_URL}/?page=profile_detail&id={current_login_user_id}"
+                my_profile_url = f"{BASE_URL}/?page=profile_detail&id={current_user_id}"
 
                 # QRコードを画像としてメモリ上に生成
                 img = qrcode.make(my_profile_url)
