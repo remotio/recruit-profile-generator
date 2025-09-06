@@ -85,12 +85,19 @@ def render_page():
     
     if st.button("検索", key="search_button"):
         # 2. 検索ボタンが押されたら、バックエンドの検索機能を呼び出す
-        current_user_id = st.session_state.user['id']
-        with st.spinner("検索中..."):
-            st.session_state.search_results = profile_manager.search_profiles(
-                current_user_id=current_user_id,
-                query=search_query
-            )
+        if not st.session_state.user:
+            with st.spinner("検索中..."):
+                st.session_state.search_results = profile_manager.search_profiles(
+                    current_user_id=None,
+                    query=search_query
+                )
+        else:
+            current_user_id = st.session_state.user['id']
+            with st.spinner("検索中..."):
+                st.session_state.search_results = profile_manager.search_profiles(
+                    current_user_id=current_user_id,
+                    query=search_query
+                )
     
     # 3. セッションステートに検索結果があるかどうかで、表示を切り替える
     if 'search_results' in st.session_state and st.session_state.search_results is not None:
