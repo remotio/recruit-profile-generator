@@ -78,6 +78,14 @@ def render_page():
     </style>
     """, unsafe_allow_html=True)
 
+
+    is_logged_in = st.session_state.user is not None
+    profile_exists = False
+    if is_logged_in:
+        # ログインしている場合のみ、プロフィールの存在を確認
+        current_user_id = st.session_state.user['id']
+        profile_exists = profile_manager.check_profile_exists(current_user_id)
+
     st.subheader("みんなのプロフィール", divider="blue")
 
      # 1. 検索フォームを配置
