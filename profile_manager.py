@@ -9,6 +9,7 @@ import uuid
 import os
 import base64
 from pathlib import Path
+from typing import Optional
 
 
 
@@ -98,7 +99,7 @@ class ProfileManager:
             print(f"プロフィールの更新中にエラーが発生しました: {e}")
             raise ValueError("プロフィールの更新に失敗しました。") from e
 
-    def get_all_profiles(self,current_user_id:str) -> List[Dict[str, Any]]:
+    def get_all_profiles(self,current_user_id:Optional[str]=None) -> List[Dict[str, Any]]:
         """
         自身を除く全ユーザーの一覧を取得する．
         GET /profiles相当．
