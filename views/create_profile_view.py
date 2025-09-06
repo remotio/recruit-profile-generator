@@ -1,5 +1,6 @@
 import streamlit as st
 import datetime
+import time
 
 JAPANESE_UNIVERSITIES = [
     "東京大学", "京都大学", "大阪大学", "東北大学", "名古屋大学",
@@ -32,19 +33,12 @@ def render_page():
     
     if 'hobbies' not in st.session_state:
         st.session_state.hobbies = [""]
-    if 'tags' not in st.session_state:
-        st.session_state.tags = [""]
-
+    
     def add_hobby():
         st.session_state.hobbies.append("")
     def delete_hobby(index):
         if len(st.session_state.hobbies) > 1:
             st.session_state.hobbies.pop(index)
-    def add_tag():
-        st.session_state.tags.append("")
-    def delete_tag(index):
-        if len(st.session_state.tags) > 1:
-            st.session_state.tags.pop(index)
 
     st.subheader("新しいプロフィールを作成", divider="blue")
 
@@ -60,7 +54,19 @@ def render_page():
         st.text_input("名", key="first_name")
         st.date_input("誕生日", min_value=datetime.date(1980, 1, 1), max_value=datetime.date(2010, 12, 31), value=None, key="birth_date")
         st.selectbox("学部 *", DEPARTMENTS, index=None, placeholder="学部・学科を選択または入力して検索...", key="department")
-
+    
+    st.divider()
+    
+    st.subheader("プロフィール画像")
+    uploaded_file = st.file_uploader(
+        "画像をアップロード", 
+        type=["png", "jpg", "jpeg"], 
+        key="profile_image_uploader"
+    )
+    
+    if uploaded_file is not None:
+        st.image(uploaded_file, caption='アップロードされた画像', use_column_width=False, width=150)
+    
     st.divider()
 
     st.subheader("趣味")
@@ -72,47 +78,71 @@ def render_page():
             st.button("削除", key=f"delete_hobby_{i}", on_click=delete_hobby, args=(i,), use_container_width=True)
     st.button("＋追加", on_click=add_hobby, key="add_hobby")
 
-    st.subheader("タグ")
-    for i in range(len(st.session_state.tags)):
-        input_col, delete_col = st.columns([4, 1])
-        with input_col:
-            st.session_state.tags[i] = st.text_input(f"{i + 1}つ目", value=st.session_state.tags[i], key=f"tag_{i}", label_visibility="collapsed", placeholder="例: カフェ好き")
-        with delete_col:
-            st.button("削除", key=f"delete_tag_{i}", on_click=delete_tag, args=(i,), use_container_width=True)
-    st.button("＋追加", on_click=add_tag, key="add_tag")
-
     st.divider()
 
     st.text_area("話すと嬉しくなること", placeholder="例: おすすめの映画について話したいです！", key="happy_topic")
     st.text_area("ちょっと詳しいこと", placeholder="例: 美味しいコーヒーの淹れ方には自信があります", key="expert_topic")
     st.write("")
-
+    
+    # タグ入力のUIを削除
+    if 'tags' in st.session_state:
+        del st.session_state.tags
+        
     if st.button("自己紹介を自動生成する！", use_container_width=True, type="primary"):
         if not st.session_state.nickname or not st.session_state.university or not st.session_state.hometown or not st.session_state.department:
             st.error("「*」が付いている項目はすべて選択・入力してください。")
         else:
             with st.spinner("AIがあなたの自己紹介を生成中です..."):
                 hobbies = [h for h in st.session_state.hobbies if h]
-                tags = [tag.strip().lstrip("#") for tag in st.session_state.tags if tag.strip()]
+                tags = [] # タグ入力を削除したため空のリストに
                 
                 profile_data = {
                     "id": st.session_state.user['id'], 
-                    "last_name": st.session_state.last_name, "first_name": st.session_state.first_name,
+                    "last_name": st.session_state.last_name, 
+                    "first_name": st.session_state.first_name,
                     "nickname": st.session_state.nickname, 
                     "birth_date": st.session_state.birth_date.strftime("%Y-%m-%d") if st.session_state.birth_date else None,
                     "university": st.session_state.university,
-                    "department": st.session_state.department, "hometown": st.session_state.hometown,
+                    "department": st.session_state.department, 
+                    "hometown": st.session_state.hometown,
                     "hobbies": hobbies,
-                    "happy_topic": st.session_state.happy_topic, "expert_topic": st.session_state.expert_topic,
-                    "tags": tags
+                    "happy_topic": st.session_state.happy_topic, 
+                    "expert_topic": st.session_state.expert_topic,
                 }
+                
+                # プロフィール画像のアップロード
+                if uploaded_file is not None:
+                    try:
+                        file_bytes = uploaded_file.getvalue()
+                        public_url = manager.upload_profile_image(
+                            user_id=st.session_state.user['id'],
+                            file_body=file_bytes,
+                            file_name=uploaded_file.name
+                        )
+                        profile_data["profile_image_url"] = public_url
+                    except Exception as e:
+                        st.error(f"画像のアップロードに失敗しました: {e}")
+                        return
+                
                 response = manager.create_profile(profile_data)
 
             if response:
                 st.success("プロフィールを作成しました！マイページに移動します。")
-                st.balloons()
-                st.session_state.profile_exists = True
-                st.session_state.active_page = "マイページ"
-                st.rerun()
+                
+                # プロフィールが確実に存在するかをポーリングで確認
+                with st.spinner("データベースを同期中..."):
+                    profile_found = False
+                    for _ in range(5):  # 最大5回、1秒間隔で確認
+                        if manager.check_profile_exists(st.session_state.user['id']):
+                            profile_found = True
+                            break
+                        time.sleep(1)
+                    
+                if profile_found:
+                    st.session_state.profile_exists = True
+                    st.session_state.active_page = "マイページ"
+                    st.rerun()
+                else:
+                    st.error("プロフィールの同期に失敗しました。時間をおいて再度お試しください。")
             else:
                 st.error("自己紹介の生成に失敗しました。")
