@@ -96,7 +96,7 @@ def render_page():
                 tags = [tag.strip().lstrip("#") for tag in st.session_state.tags if tag.strip()]
                 
                 profile_data = {
-                    "id": st.session_state.user['id'], ### 変更：ログインユーザーのIDを追加
+                    "id": st.session_state.user['id'], 
                     "last_name": st.session_state.last_name, "first_name": st.session_state.first_name,
                     "nickname": st.session_state.nickname, 
                     "birth_date": st.session_state.birth_date.strftime("%Y-%m-%d") if st.session_state.birth_date else None,
@@ -109,15 +109,10 @@ def render_page():
                 response = manager.create_profile(profile_data)
 
             if response:
-                st.success("自己紹介が完成しました！")
+                st.success("プロフィールを作成しました！マイページに移動します。")
                 st.balloons()
-                with st.container(border=True):
-                    st.subheader(f"🎉 {response.get('nickname')}さんのプロフィール")
-                    generated_profile = response.get('generated_profile', {})
-                    animal_result = response.get('animal_result', {})
-                    st.write(f"**{generated_profile.get('catchphrase', '')}**")
-                    st.write(generated_profile.get('introduction_comment', ''))
-                    st.subheader(f"あなたのイメージ: **{animal_result.get('name', '')}**")
-                    st.write(animal_result.get('reason', ''))
+                st.session_state.profile_exists = True
+                st.session_state.active_page = "マイページ"
+                st.rerun()
             else:
                 st.error("自己紹介の生成に失敗しました。")

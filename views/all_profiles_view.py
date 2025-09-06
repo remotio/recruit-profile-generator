@@ -119,16 +119,14 @@ def render_page():
             st.session_state.search_results = None
             st.rerun() # ページを再読み込みして一覧表示に戻す
     else:
-        # この行を追加して、suggested_profilesを必ず初期化する
+        # ログイン済みかつプロフィール作成済みの場合のみ、類似ユーザーを表示する
         suggested_profiles = []
-
-        if st.session_state.user:
+        if st.session_state.user and st.session_state.profile_exists:
             with st.spinner("あなたにぴったりの人を探しています..."):
                 try:
                     # 1. 自分に似ているユーザーを10人取得する
                     similar_profiles = profile_manager.find_similar_profiles(st.session_state.user['id'])
                     
-                    # 表示する類似ユーザーを格納するリスト
                     if similar_profiles:
                         # 2. 10人の中からランダムに表示する人を決める（最大二人）
                         sample_count = min(len(similar_profiles), 2)
@@ -146,8 +144,6 @@ def render_page():
                 except Exception as e:
                     # 類似ユーザー検索に失敗しても、ページ全体が停止しないようにする
                     st.toast(f"類似ユーザーの取得に失敗しました: {e}", icon="⚠️")
-                    # エラー時も初期化されているので、この行は削除
-                    # suggested_profiles = [] 
 
         with st.spinner("みんなのプロフィールを読み込んでいます..."):
             try:
