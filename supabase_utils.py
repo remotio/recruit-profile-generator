@@ -259,4 +259,17 @@ def update_profile_url(supabase: Client, user_id: str, image_url: str) -> List[D
     except Exception as e:
         print(f"プロフィール画像のURL更新中にエラーが発生しました: {e}")
         raise ValueError("プロフィール画像のURL更新に失敗しました。") from e
+def search_profiles(supabase: Client, query: str, current_user_id: str) -> List[Dict[str, Any]]:
+    """
+    SupabaseのSQL関数(RPC)を呼び出して、統合検索を実行する。
+    """
+    try:
+        response = supabase.rpc('search_profiles', {
+            'search_query': query,
+            'exclude_user_id': current_user_id
+        }).execute()
+        return response.data
+    except Exception as e:
+        print(f"プロフィール検索中にエラー: {e}")
+        raise ValueError("プロフィールの検索に失敗しました。") from e
 
