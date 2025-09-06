@@ -15,10 +15,13 @@ def get_profile_by_id(supabase: Client, profile_id: str):
         指定されたユーザーのプロフィールデータ．
     """
     try:
-        response = supabase.table('profiles').select("*").eq('id', profile_id).single().execute()
-        if not response.data:
-            raise ValueError(f"ID {profile_id} のプロフィールが見つかりませんでした。")
-        return response.data
+        response = supabase.table('profiles').select("*").eq('id', profile_id).execute()
+        # 結果のリストにデータが含まれていれば、最初の要素（辞書）を返す
+        if response.data:
+            return response.data[0]
+        # データがなければ（プロフィールが存在しなければ）、Noneを返す
+        else:
+            return None
     except Exception as e:
         print(f"データベースへのアクセス中にエラーが発生しました。: {e}")
         raise ValueError("データベースへのアクセス中にエラーが発生しました。") from e
