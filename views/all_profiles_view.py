@@ -141,7 +141,14 @@ def render_page():
 
         with st.spinner("みんなのプロフィールを読み込んでいます..."):
             try:
-                profiles = profile_manager.get_all_profiles(st.session_state.user['id'])
+                # ログインしているかチェック
+                if st.session_state.user:
+                    # ログインしていれば、自分のIDを渡して自分を除外
+                    current_user_id = st.session_state.user['id']
+                    profiles = profile_manager.get_all_profiles(current_user_id)
+                else:
+                    # ログインしていなければ、引数なしで呼び出し、全ユーザーを取得
+                    profiles = profile_manager.get_all_profiles()
             except Exception as e:
                 st.error(f"プロフィールの取得中にエラーが発生しました: {e}")
                 return 
