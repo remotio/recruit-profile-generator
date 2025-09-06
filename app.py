@@ -22,6 +22,12 @@ if 'user' not in st.session_state:
 if 'profile_exists' not in st.session_state:
     st.session_state.profile_exists = False
 
+query_params = st.query_params
+if "page" in query_params and query_params["page"]=="profile_detail":
+    st.session_state.active_page="プロフィール詳細"
+    if "id" in query_params:
+        st.session_state.target_profile_id=query_params["id"]
+
 # 一旦サイドバーを用いたログインフォームを実装
 with st.sidebar:
     st.header("認証")
@@ -66,7 +72,6 @@ with st.sidebar:
             st.rerun()
 
 # ログイン状態に応じたメイン画面の表示
-# ログイン&プロフ作成済み/ログインのみ/未ログインの3パターンで表示を分ける
 if st.session_state.user:
     st.toast(f"ようこそ、{st.session_state.user['email']}さん!")
     current_user_id=st.session_state.user['id']
@@ -79,9 +84,10 @@ else:
     st.info("サイドバーからログインすると、マイページの編集やAIによる会話のヒント機能が利用できます。")
 
 
+
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from views import all_profiles_view, my_page_view, create_profile_view
+from views import all_profiles_view, my_page_view, create_profile_view,profile_detail_view
 
 st.set_page_config(
     page_title="内定者図鑑ジェネレーター",
@@ -102,9 +108,6 @@ render_nav_banner(pages=pages)
 
 if 'active_page' not in st.session_state:
     st.session_state.active_page = "みんなの図鑑"
-
-
-# ページごとのルーティングと認証チェック
 if st.session_state.active_page == "みんなの図鑑":
     all_profiles_view.render_page()
 
@@ -120,3 +123,6 @@ elif st.session_state.active_page == "プロフィール作成":
         create_profile_view.render_page()
     else:
         st.warning("プロフィールを作成・編集するには、サイドバーからログインしてください。")
+elif st.session_state.active_page == "プロフィール詳細":
+    profile_detail_view.render_page()
+    
