@@ -155,8 +155,8 @@ class ProfileManager:
         プロフィールが存在するか確認する．
         """
         try:
-            self.get_profile_by_id(user_id)
-            return True
+            profile=self.get_profile_by_id(user_id)
+            return profile is not None
         except ValueError:
             return False
 

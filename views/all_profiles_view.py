@@ -130,7 +130,7 @@ def render_page():
         if 'suggested_profiles' not in st.session_state:
             st.session_state.suggested_profiles = []
         # suggested_profilesが空で，ログインしている場合に類似ユーザを取得・抽選する
-        if not st.session_state.suggested_profiles and st.session_state.user:
+        if not st.session_state.suggested_profiles and st.session_state.user and st.session_state.profile_exists:
             try:
                 similar_profiles = profile_manager.find_similar_profiles(st.session_state.user['id'])
                 with st.spinner("あなたにぴったりの人を探しています..."):
