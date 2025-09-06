@@ -17,6 +17,10 @@ if 'supabase_client' not in st.session_state:
 # 認証状態の初期化
 if 'user' not in st.session_state:
     st.session_state.user=None
+    
+# プロフィール存在状態のキャッシュを初期化
+if 'profile_exists' not in st.session_state:
+    st.session_state.profile_exists = False
 
 query_params = st.query_params
 if "page" in query_params and query_params["page"]=="profile_detail":
@@ -51,12 +55,23 @@ with st.sidebar:
         st.write(f"ログイン中: {st.session_state.user['email']}")
         if st.button("ログアウト"):
             st.session_state.user=None
+            # ログアウト時にページをリセット
+            st.session_state.active_page = "みんなの図鑑"
             st.success("ログアウトしました")
             st.rerun()
 
 # ログイン状態に応じたメイン画面の表示
 if st.session_state.user:
+    st.toast(f"ようこそ、{st.session_state.user['email']}さん!")
     current_user_id=st.session_state.user['id']
+    profile_exists=st.session_state.profile_manager.check_profile_exists(current_user_id)
+    # プロフィール存在状態をセッションにキャッシュ
+    st.session_state.profile_exists = profile_exists
+    if not profile_exists:
+        st.info("ようこそ!まずはあなたのプロフィールを作成しましょう。")
+else:
+    # 変更点：ログインしていなくても閲覧は許可するため、警告をソフトな案内に変更
+    st.info("サイドバーからログインすると、マイページの編集やAIによる会話のヒント機能が利用できます。")
 
 
 
@@ -69,25 +84,35 @@ st.set_page_config(
     layout="wide"
 )
 
+# ナビゲーションバーの表示ロジックを修正
+# ログイン状態とプロフィール作成状態に応じて表示するボタンを切り替える
+pages = ["みんなの図鑑"]
+if st.session_state.user:
+    if st.session_state.profile_exists:
+        pages.append("マイページ")
+    else:
+        pages.append("プロフィール作成")
 
-render_nav_banner()
+# pagesリストをrender_nav_bannerに渡す
+render_nav_banner(pages=pages)
 
 if 'active_page' not in st.session_state:
     st.session_state.active_page = "みんなの図鑑"
-# ログインが必須なページをリストで管理
-PAGES_REQUIRING_LOGIN = ["マイページ", "プロフィール作成"]
-
-# 現在のページがログイン必須リストに含まれていて、かつログインしていない場合
-if st.session_state.active_page in PAGES_REQUIRING_LOGIN and st.session_state.user is None:
-    st.warning("このページを閲覧するには、サイドバーからログインしてください。")
-    st.stop() # 処理を中断
-
-# ページに応じて描画する関数を呼び出す
 if st.session_state.active_page == "みんなの図鑑":
     all_profiles_view.render_page()
+
 elif st.session_state.active_page == "マイページ":
-    my_page_view.render_page()
+    if st.session_state.user and st.session_state.profile_exists:
+        my_page_view.render_page()
+    else:
+        st.warning("マイページを表示するには、プロフィールを作成する必要があります。")
+        st.info("ナビゲーションバーから「プロフィール作成」ページに移動してください。")
+
+elif st.session_state.active_page == "プロフィール作成":
+    if st.session_state.user:
+        create_profile_view.render_page()
+    else:
+        st.warning("プロフィールを作成・編集するには、サイドバーからログインしてください。")
 elif st.session_state.active_page == "プロフィール詳細":
     profile_detail_view.render_page()
-elif st.session_state.active_page == "プロフィール作成":
-    create_profile_view.render_page()
+    

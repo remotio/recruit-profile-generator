@@ -85,12 +85,19 @@ def render_page():
     
     if st.button("検索", key="search_button"):
         # 2. 検索ボタンが押されたら、バックエンドの検索機能を呼び出す
-        current_user_id = st.session_state.user['id']
-        with st.spinner("検索中..."):
-            st.session_state.search_results = profile_manager.search_profiles(
-                current_user_id=current_user_id,
-                query=search_query
-            )
+        if not st.session_state.user:
+            with st.spinner("検索中..."):
+                st.session_state.search_results = profile_manager.search_profiles(
+                    current_user_id=None,
+                    query=search_query
+                )
+        else:
+            current_user_id = st.session_state.user['id']
+            with st.spinner("検索中..."):
+                st.session_state.search_results = profile_manager.search_profiles(
+                    current_user_id=current_user_id,
+                    query=search_query
+                )
     
     # 3. セッションステートに検索結果があるかどうかで、表示を切り替える
     if 'search_results' in st.session_state and st.session_state.search_results is not None:
@@ -112,32 +119,35 @@ def render_page():
             st.session_state.search_results = None
             st.rerun() # ページを再読み込みして一覧表示に戻す
     else:
+        # この行を追加して、suggested_profilesを必ず初期化する
+        suggested_profiles = []
 
-        with st.spinner("あなたにぴったりの人を探しています..."):
-            try:
-                # 1. 自分に似ているユーザーを10人取得する
-                similar_profiles = profile_manager.find_similar_profiles(st.session_state.user['id'])
-                
-                # 表示する類似ユーザーを格納するリスト
-                suggested_profiles = []
-                if similar_profiles:
-                    # 2. 10人の中からランダムに表示する人を決める（最大二人）
-                    sample_count = min(len(similar_profiles), 2)
-                    suggested_profiles = random.sample(similar_profiles, k=sample_count)
+        if st.session_state.user:
+            with st.spinner("あなたにぴったりの人を探しています..."):
+                try:
+                    # 1. 自分に似ているユーザーを10人取得する
+                    similar_profiles = profile_manager.find_similar_profiles(st.session_state.user['id'])
+                    
+                    # 表示する類似ユーザーを格納するリスト
+                    if similar_profiles:
+                        # 2. 10人の中からランダムに表示する人を決める（最大二人）
+                        sample_count = min(len(similar_profiles), 2)
+                        suggested_profiles = random.sample(similar_profiles, k=sample_count)
 
-                # 3. 類似ユーザーを表示するセクション
-                if suggested_profiles:
-                    st.markdown("##### 💡 あなたと属性が近いかも...？")
-                    cols = st.columns(len(suggested_profiles)) # 1人なら1列、2人なら2列
-                    for i, profile in enumerate(suggested_profiles):
-                        # 既存のカード描画関数を再利用
-                        render_profile_card(profile, cols[i])
-                    st.divider()
+                    # 3. 類似ユーザーを表示するセクション
+                    if suggested_profiles:
+                        st.markdown("##### 💡 あなたと属性が近いかも...？")
+                        cols = st.columns(len(suggested_profiles)) # 1人なら1列、2人なら2列
+                        for i, profile in enumerate(suggested_profiles):
+                            # 既存のカード描画関数を再利用
+                            render_profile_card(profile, cols[i])
+                        st.divider()
 
-            except Exception as e:
-                # 類似ユーザー検索に失敗しても、ページ全体が停止しないようにする
-                st.toast(f"類似ユーザーの取得に失敗しました: {e}", icon="⚠️")
-                suggested_profiles = [] # エラー時は空にする
+                except Exception as e:
+                    # 類似ユーザー検索に失敗しても、ページ全体が停止しないようにする
+                    st.toast(f"類似ユーザーの取得に失敗しました: {e}", icon="⚠️")
+                    # エラー時も初期化されているので、この行は削除
+                    # suggested_profiles = [] 
 
         with st.spinner("みんなのプロフィールを読み込んでいます..."):
             try:
@@ -192,7 +202,7 @@ def render_profile_card(profile:dict,target_col):
                     <img class="animal-image" src="{animal_image_data_card}">
                 </div>
                 <h4 style='text-align: center; ...'>{profile['nickname']}</h4>
-                <p style='text-align: center; ...'>{profile.get('university', '')} / {profile.get('department', '')}</p>
+                <p style='text-align: center; ...'>{profile.get('last_name', '')} {profile.get('first_name', '')}</p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -232,9 +242,20 @@ def render_profile_card(profile:dict,target_col):
                             animal_image_data_detail = 'https://placehold.co/60x60/cccccc/333333?text=Animal'
                         
                         # 3. 取得した画像データを表示
-                        st.image(animal_image_data_detail, width=45)
+                        st.image(animal_image_data_detail, width=90)
 
                     with animal_text_col:
+                        # 1. カテゴリ名の末尾の「タイプ」を削除
+                        category = profile.get('animal_category', 'カテゴリ未分類')
+                        category_without_type = category.removesuffix('タイプ') 
+                        
+                        st.markdown(f"**{category_without_type}**")
+
+                        # 2. 動物名には「タイプ」を付けて表示
+                        animal_name = profile.get('animal_name', '診断中...')
+                        st.subheader(f"“{animal_name}タイプ”")
+
+                        '''
                         st.markdown(f"**{profile.get('animal_category', 'カテゴリ未分類')}**")
                         
                         animal_name = profile.get('animal_name')
@@ -252,6 +273,7 @@ def render_profile_card(profile:dict,target_col):
                             </div>
                             """
                         st.markdown(html_content, unsafe_allow_html=True)
+                        '''
                         
                 st.write("") # スペース
                 
@@ -272,9 +294,9 @@ def render_profile_card(profile:dict,target_col):
                         birth_date_formatted = f"{dt_obj.month}月{dt_obj.day}日"
                     else:
                         birth_date_formatted = '未設定'
-                    st.markdown(f"**誕生日:**  {birth_date_formatted}")
-                    st.markdown(f"**出身地:**  {profile.get('hometown', '未設定')}")
-                    st.markdown(f"**大学:**  {profile.get('university', '未設定')}")
+                    st.markdown(f"**誕生日:** {birth_date_formatted}")
+                    st.markdown(f"**出身地:** {profile.get('hometown', '未設定')}")
+                    st.markdown(f"**大学:** {profile.get('university', '未設定')}")
                 with colB:
                     st.markdown(f"**趣味:** {', '.join(profile.get('hobbies', []))}")
                     st.markdown(f"**話したいこと:** {profile.get('happy_topic', '未設定')}")

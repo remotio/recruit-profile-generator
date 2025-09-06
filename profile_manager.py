@@ -248,7 +248,7 @@ class ProfileManager:
         """
         updated_profile_list = supabase_utils.update_profile_url(self.db_client, user_id, public_url)
         return updated_profile_list[0]
-    def search_profiles(self, query: str, current_user_id: str) -> List[Dict[str, Any]]:
+    def search_profiles(self, query: str, current_user_id: Optional[str]) -> List[Dict[str, Any]]:
         """
         プロフィール全体を検索する．
         """
