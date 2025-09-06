@@ -112,32 +112,28 @@ def render_page():
             st.session_state.search_results = None
             st.rerun() # ページを再読み込みして一覧表示に戻す
     else:
-        if st.session_state.user:
-            with st.spinner("あなたにぴったりの人を探しています..."):
-                try:
-                    # 1. 自分に似ているユーザーを10人取得する
+        if 'suggested_profiles' not in st.session_state:
+            st.session_state.suggested_profiles = []
+        # suggested_profilesが空で，ログインしている場合に類似ユーザを取得・抽選する
+        if not st.session_state.suggested_profiles and st.session_state.user:
+            try:
+                similar_profiles = profile_manager.find_similar_profiles(st.session_state.user['id'])
+                with st.spinner("あなたにぴったりの人を探しています..."):
                     similar_profiles = profile_manager.find_similar_profiles(st.session_state.user['id'])
-                    
-                    # 表示する類似ユーザーを格納するリスト
-                    suggested_profiles = []
                     if similar_profiles:
-                        # 2. 10人の中からランダムに表示する人を決める（最大二人）
                         sample_count = min(len(similar_profiles), 2)
-                        suggested_profiles = random.sample(similar_profiles, k=sample_count)
+                        # 抽選結果をセッションステートに保存
+                        st.session_state.suggested_profiles = random.sample(similar_profiles, k=sample_count)
+            except Exception as e:
+                st.toast(f"類似ユーザーの取得に失敗しました: {e}", icon="⚠️")
 
-                    # 3. 類似ユーザーを表示するセクション
-                    if suggested_profiles:
-                        st.markdown("##### 💡 あなたと属性が近いかも...？")
-                        cols = st.columns(len(suggested_profiles)) # 1人なら1列、2人なら2列
-                        for i, profile in enumerate(suggested_profiles):
-                            # 既存のカード描画関数を再利用
-                            render_profile_card(profile, cols[i])
-                        st.divider()
-
-                except Exception as e:
-                    # 類似ユーザー検索に失敗しても、ページ全体が停止しないようにする
-                    st.toast(f"類似ユーザーの取得に失敗しました: {e}", icon="⚠️")
-                    suggested_profiles = [] # エラー時は空にする
+        # セッションステートに保存された類似ユーザーを表示する
+        if st.session_state.suggested_profiles:
+            st.markdown("##### 💡 あなたと属性が近いかも...？")
+            cols = st.columns(len(st.session_state.suggested_profiles))
+            for i, profile in enumerate(st.session_state.suggested_profiles):
+                render_profile_card(profile, cols[i])
+            st.divider()
 
         with st.spinner("みんなのプロフィールを読み込んでいます..."):
             try:
@@ -152,12 +148,12 @@ def render_page():
             except Exception as e:
                 st.error(f"プロフィールの取得中にエラーが発生しました: {e}")
                 return 
-
+        st.markdown("##### 全ユーザー一覧")
         if not profiles:
             st.info("まだ誰も登録していません。")
         else:
             # 1. 提案セクションに表示されたユーザーのIDのセットを作成
-            suggested_ids = {p['id'] for p in suggested_profiles}
+            suggested_ids = {p['id'] for p in st.session_state.get('suggested_profiles', [])}
             # 2. メインの一覧から、提案済みのユーザーを除外する
             main_list_profiles = [p for p in profiles if p['id'] not in suggested_ids]
             cols = st.columns(2)
