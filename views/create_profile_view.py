@@ -94,10 +94,9 @@ def render_page():
         else:
             with st.spinner("AIがあなたの自己紹介を生成中です..."):
                 hobbies = [h for h in st.session_state.hobbies if h]
-<<<<<<< HEAD
-=======
+
                 tags = [] # タグ入力を削除したため空のリストに
->>>>>>> main
+
                 
                 profile_data = {
                     "id": st.session_state.user['id'], 
@@ -123,10 +122,8 @@ def render_page():
                             file_name=uploaded_file.name
                         )
                         profile_data["profile_image_url"] = public_url
-<<<<<<< HEAD
                         st.toast("画像をアップロードしました！", icon="🎉")
-=======
->>>>>>> main
+
                     except Exception as e:
                         st.error(f"画像のアップロードに失敗しました: {e}")
                         return
