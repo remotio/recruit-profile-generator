@@ -235,9 +235,20 @@ def render_profile_card(profile:dict,target_col):
                             animal_image_data_detail = 'https://placehold.co/60x60/cccccc/333333?text=Animal'
                         
                         # 3. 取得した画像データを表示
-                        st.image(animal_image_data_detail, width=45)
+                        st.image(animal_image_data_detail, width=90)
 
                     with animal_text_col:
+                        # 1. カテゴリ名の末尾の「タイプ」を削除
+                        category = profile.get('animal_category', 'カテゴリ未分類')
+                        category_without_type = category.removesuffix('タイプ') 
+                        
+                        st.markdown(f"**{category_without_type}**")
+
+                        # 2. 動物名には「タイプ」を付けて表示
+                        animal_name = profile.get('animal_name', '診断中...')
+                        st.subheader(f"“{animal_name}タイプ”")
+
+                        '''
                         st.markdown(f"**{profile.get('animal_category', 'カテゴリ未分類')}**")
                         
                         animal_name = profile.get('animal_name')
@@ -255,6 +266,7 @@ def render_profile_card(profile:dict,target_col):
                             </div>
                             """
                         st.markdown(html_content, unsafe_allow_html=True)
+                        '''
                         
                 st.write("") # スペース
                 
