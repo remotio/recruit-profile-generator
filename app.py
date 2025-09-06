@@ -3,12 +3,17 @@ from supabase import create_client, Client
 from config import SUPABASE_URL, SUPABASE_KEY  # 設定情報をインポート
 import supabase_utils  # DB操作関数をインポート
 import profile_manager
+from components import render_nav_banner
+import sys
+import os
 
 # --- アプリケーションの初期化処理 ---
 # Supabaseへの接続を確立する
-supabase:Client=create_client(SUPABASE_URL,SUPABASE_KEY)
-# Profile_managerの初期化
-profile_manager=profile_manager.ProfileManager(supabase)
+if 'supabase_client' not in st.session_state:
+    st.session_state.supabase_client = create_client(SUPABASE_URL, SUPABASE_KEY)
+    # Profile_managerの初期化
+    st.session_state.profile_manager = profile_manager.ProfileManager(st.session_state.supabase_client)
+
 # 認証状態の初期化
 if 'user' not in st.session_state:
     st.session_state.user=None
@@ -22,7 +27,7 @@ with st.sidebar:
 
         if st.button("新規登録"):
             try:
-                user=profile_manager.sign_up(email,password)
+                user=st.session_state.profile_manager.sign_up(email,password)
                 st.session_state.user=user
                 st.success("新規登録に成功しました!")
                 st.rerun()
@@ -30,7 +35,7 @@ with st.sidebar:
                 st.error(f"新規登録に失敗しました: {e}")
         if st.button("ログイン"):
             try:
-                user=profile_manager.sign_in(email,password)
+                user=st.session_state.profile_manager.sign_in(email,password)
                 st.session_state.user=user
                 st.success("ログインに成功しました!")
                 st.rerun()
@@ -48,7 +53,7 @@ with st.sidebar:
 if st.session_state.user:
     st.info(f"ようこそ、{st.session_state.user['email']}さん!")
     current_user_id=st.session_state.user['id']
-    profile_exists=profile_manager.check_profile_exists(current_user_id)
+    profile_exists=st.session_state.profile_manager.check_profile_exists(current_user_id)
     if not profile_exists:
         st.info("ようこそ!まずはあなたのプロフィールを作成しましょう。")
         #ここにフォームを置く
@@ -56,6 +61,31 @@ if st.session_state.user:
         #ここにメイン画面を表示する
         st.title("プロフィール")#インデントエラー回避の仮
 else:
-    st.warning("サイドバーから新規登録またはログインしてください")
+    st.warning("サイドバーから新規登録またはログインしてください。")
 
 
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from views import all_profiles_view, my_page_view, create_profile_view
+
+st.set_page_config(
+    page_title="内定者図鑑ジェネレーター",
+    layout="wide"
+)
+
+
+render_nav_banner()
+
+if st.session_state.user is None:
+    st.info("サイドバーからログインしてください。")
+    st.stop()
+if 'active_page' not in st.session_state:
+    st.session_state.active_page = "みんなの図鑑"
+
+if st.session_state.active_page == "みんなの図鑑":
+    all_profiles_view.render_page()
+elif st.session_state.active_page == "マイページ":
+    my_page_view.render_page()
+elif st.session_state.active_page == "プロフィール作成":
+    create_profile_view.render_page()

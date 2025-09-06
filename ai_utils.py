@@ -206,7 +206,9 @@ def create_conversation_starters(profile_a: Dict[str, Any], profile_b: Dict[str,
     
     try:
         # 3. Gemini APIを呼び出してテキスト生成
-        response = text_generation_model.generate_content(prompt)
+        # 応答時間の関係で，1.5-flashを使用
+        conv_starter_model = genai.GenerativeModel('gemini-2.5-flash')
+        response = conv_starter_model.generate_content(prompt)
         ai_response_text = response.text
         
         # 4. AIの返事からJSON部分だけを賢く抜き出す
@@ -223,36 +225,6 @@ def create_conversation_starters(profile_a: Dict[str, Any], profile_b: Dict[str,
     except Exception as e:
         print(f"会話のきっかけ生成でエラーが発生しました: {e}")
         raise ValueError("会話のきっかけ生成に失敗しました。") from e
-
-
-
-# --- テスト用コード ---
-if __name__ == '__main__':
-    # 1. テスト用のダミーデータを作成する
-    test_user_input: UserInput = {
-        "last_name": "山田",
-        "first_name": "さき",
-        "nickname": "さき",
-        "birth_date": "2002-08-10",
-        "university": "福岡大学",
-        "hometown": "福岡県",
-        "hobbies": ["カフェ巡り", "映画鑑賞"],
-        "happy_topic": "おすすめの映画について",
-        "expert_topic": "美味しいコーヒーの淹れ方",
-    }
-
-    # 2. 自己紹介文生成のテスト
-    print("--- AIに自己紹介文の生成をリクエストします... ---")
-    generated_data = generate_introduction_text(test_user_input)
-    import pprint
-    pprint.pprint(generated_data)
-    print("--------------------------\n")
-    
-    # 3. 動物分類のテストを追加
-    print("--- AIに動物分類をリクエストします... ---")
-    animal_data = classify_animal_type(test_user_input)
-    pprint.pprint(animal_data)
-    print("--------------------------")
 
 # --- ここからがテスト用のコードです ---
 if __name__ == '__main__':

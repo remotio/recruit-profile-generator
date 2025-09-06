@@ -5,6 +5,10 @@ import ai_utils
 import embedding_generator
 from typing import List,Dict,Any
 from dict_types import UserInput,EditableGeneratedProfile
+import uuid
+import os
+import base64
+from pathlib import Path
 
 
 
@@ -181,3 +185,73 @@ class ProfileManager:
             print(f"会話のきっかけ生成中にエラーが発生しました: {e}")
             raise ValueError("会話のきっかけ生成に失敗しました。") from e
 
+    def get_memo_for_target(self, current_user_id: str, target_user_id: str) -> Dict[str, Any] | None:
+        """
+        現在ログインしているユーザーが、対象ユーザーについて書いたメモを取得する。
+        """
+        return supabase_utils.get_memo(self.db_client, current_user_id, target_user_id)
+    def save_memo(self,current_user_id:str,target_user_id:str,content:str)->Dict[str,Any]:
+        """
+        現在ログインしているユーザーが,対象ユーザーについてメモを保存する.
+
+        """
+        return supabase_utils.upsert_memo(self.db_client,current_user_id,target_user_id,content)
+    def delete_memo(self,current_user_id:str,target_user_id:str)->None:
+        """
+        現在ログインしているユーザーが，対象ユーザーについて書いたメモを削除する．
+        """
+        return supabase_utils.delete_memo(self.db_client,current_user_id,target_user_id)
+    def upload_profile_image(self,user_id:str,file_body,file_name:str)->str:
+        """
+        プロフィール画像をSupabase Storageにアップロードし，その公開URLを取得する．
+        """
+
+        # 1. 元のファイル名から拡張子（.pngなど）を取得
+        _, extension = os.path.splitext(file_name)
+        
+        # 2. ランダムでユニークなUUIDを生成し，新しいファイル名を作成
+        #    例: 123e4567-e89b-12d3-a456-426614174000.png
+        safe_file_name = f"{uuid.uuid4()}{extension}"
+        
+        # 3. public/ユーザID/新しいファイル名 のパスを生成
+        file_path = f"{user_id}/{safe_file_name}"
+
+        # supabase_utilsの関数を呼び出し，アップロード&URL取得
+        public_url=supabase_utils.upload_file_and_get_url(
+            supabase=self.db_client,
+            bucket_name="profile_images",
+            file_path=file_path,
+            file_body=file_body
+        )
+        return public_url
+    def assign_animal_image_url(self,animal_name:str)->str:
+        """
+        動物名に対応する画像をBase64形式のデータURLで返す．
+        """
+        try:
+            path=Path(f"animal_images/{animal_name}.png")
+            if not path.is_file():
+                return ""
+            with open(path,"rb") as f:
+                data=f.read()
+            encoded_string=base64.b64encode(data).decode()
+
+            return f"data:image/png;base64,{encoded_string}"
+        except Exception as e:
+            print(f"画像のBase64エンコード中にエラー: {e}")
+            return ""
+
+    def update_profile_image_url(self, user_id: str, public_url: str) -> Dict[str, Any]:
+        """
+        指定されたユーザーのプロフィール画像URLをデータベースで更新する．
+        """
+        updated_profile_list = supabase_utils.update_profile_url(self.db_client, user_id, public_url)
+        return updated_profile_list[0]
+    def search_profiles(self, query: str, current_user_id: str) -> List[Dict[str, Any]]:
+        """
+        プロフィール全体を検索する．
+        """
+        if not query:
+            return []
+        
+        return supabase_utils.search_profiles(self.db_client, query, current_user_id)
