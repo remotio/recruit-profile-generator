@@ -57,7 +57,7 @@ with st.sidebar:
 # ログイン状態に応じたメイン画面の表示
 # ログイン&プロフ作成済み/ログインのみ/未ログインの3パターンで表示を分ける
 if st.session_state.user:
-    st.info(f"ようこそ、{st.session_state.user['email']}さん!")
+    st.toast(f"ようこそ、{st.session_state.user['email']}さん!")
     current_user_id=st.session_state.user['id']
     profile_exists=st.session_state.profile_manager.check_profile_exists(current_user_id)
     # プロフィール存在状態をセッションにキャッシュ
