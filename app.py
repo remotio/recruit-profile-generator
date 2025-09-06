@@ -68,8 +68,12 @@ with st.sidebar:
 # ログイン状態に応じたメイン画面の表示
 # ログイン&プロフ作成済み/ログインのみ/未ログインの3パターンで表示を分ける
 if st.session_state.user:
-    st.info(f"ようこそ、{st.session_state.user['email']}さん!")
-    if not st.session_state.profile_exists:
+    st.toast(f"ようこそ、{st.session_state.user['email']}さん!")
+    current_user_id=st.session_state.user['id']
+    profile_exists=st.session_state.profile_manager.check_profile_exists(current_user_id)
+    # プロフィール存在状態をセッションにキャッシュ
+    st.session_state.profile_exists = profile_exists
+    if not profile_exists:
         st.info("ようこそ!まずはあなたのプロフィールを作成しましょう。")
 else:
     st.info("サイドバーからログインすると、マイページの編集やAIによる会話のヒント機能が利用できます。")
