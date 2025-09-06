@@ -192,7 +192,7 @@ def render_profile_card(profile:dict,target_col):
                     <img class="animal-image" src="{animal_image_data_card}">
                 </div>
                 <h4 style='text-align: center; ...'>{profile['nickname']}</h4>
-                <p style='text-align: center; ...'>{profile.get('university', '')} / {profile.get('department', '')}</p>
+                <p style='text-align: center; ...'>{profile.get('last_name', '')} {profile.get('first_name', '')}</p>
             </div>
             """, unsafe_allow_html=True)
 
