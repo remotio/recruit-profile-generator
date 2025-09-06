@@ -55,19 +55,8 @@ with st.sidebar:
             st.rerun()
 
 # ログイン状態に応じたメイン画面の表示
-# ログイン&プロフ作成済み/ログインのみ/未ログインの3パターンで表示を分ける
 if st.session_state.user:
-    st.info(f"ようこそ、{st.session_state.user['email']}さん!")
     current_user_id=st.session_state.user['id']
-    profile_exists=st.session_state.profile_manager.check_profile_exists(current_user_id)
-    if not profile_exists:
-        st.info("ようこそ!まずはあなたのプロフィールを作成しましょう。")
-        #ここにフォームを置く
-    else:
-        #ここにメイン画面を表示する
-        st.title("プロフィール")#インデントエラー回避の仮
-else:
-    st.warning("サイドバーから新規登録またはログインしてください。")
 
 
 
