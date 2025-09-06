@@ -83,13 +83,21 @@ def render_page():
     st.text_area("話すと嬉しくなること", placeholder="例: おすすめの映画について話したいです！", key="happy_topic")
     st.text_area("ちょっと詳しいこと", placeholder="例: 美味しいコーヒーの淹れ方には自信があります", key="expert_topic")
     st.write("")
-
+    
+    # タグ入力のUIを削除
+    if 'tags' in st.session_state:
+        del st.session_state.tags
+        
     if st.button("自己紹介を自動生成する！", use_container_width=True, type="primary"):
         if not st.session_state.nickname or not st.session_state.university or not st.session_state.hometown or not st.session_state.department:
             st.error("「*」が付いている項目はすべて選択・入力してください。")
         else:
             with st.spinner("AIがあなたの自己紹介を生成中です..."):
                 hobbies = [h for h in st.session_state.hobbies if h]
+<<<<<<< HEAD
+=======
+                tags = [] # タグ入力を削除したため空のリストに
+>>>>>>> main
                 
                 profile_data = {
                     "id": st.session_state.user['id'], 
@@ -115,7 +123,10 @@ def render_page():
                             file_name=uploaded_file.name
                         )
                         profile_data["profile_image_url"] = public_url
+<<<<<<< HEAD
                         st.toast("画像をアップロードしました！", icon="🎉")
+=======
+>>>>>>> main
                     except Exception as e:
                         st.error(f"画像のアップロードに失敗しました: {e}")
                         return

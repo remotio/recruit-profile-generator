@@ -1,6 +1,9 @@
 import streamlit as st
 import datetime
 from .profile_detail_component import display_profile_detail
+import streamlit as st
+import qrcode
+from io import BytesIO
 
 
 def render_page():
@@ -51,6 +54,32 @@ def render_page():
         if st.button("プロフィールを編集する", type="primary"):
             st.session_state.edit_mode = True
             st.rerun()
+        
+        # QR関連
+        if 'show_qr' not in st.session_state:
+            st.session_state.show_qr = False
+        def toggle_qr():
+            st.session_state.show_qr = not st.session_state.show_qr
+        st.button("プロフィールQRコードを表示/非表示", on_click=toggle_qr)
+        # state.show_qrがtrueの場合のみQRコードを表示
+        if st.session_state.show_qr:
+            with st.container(border=True):
+                current_user_id=st.session_state.user['id']
+                BASE_URL="https://recruit-profile-gen.streamlit.app"
+                # QRコードに含めるURLを生成
+                my_profile_url = f"{BASE_URL}/?page=profile_detail&id={current_user_id}"
+
+                # QRコードを画像としてメモリ上に生成
+                img = qrcode.make(my_profile_url)
+                buf = BytesIO()
+                img.save(buf, format="PNG")
+                img_bytes = buf.getvalue()
+
+                # QRコードを表示
+                st.image(img_bytes, width=200)
+                st.code(my_profile_url, language="text")
+                st.caption("このQRコードを使って，あなたのプロフィールを簡単に共有できます！")
+        
 
     # (2) 編集モード
     else:
@@ -200,6 +229,7 @@ def render_page():
                     
                     hobbies_list = [h.strip() for h in st.session_state.edit_hobbies if h.strip()]
                     tags_list = [t.strip() for t in st.session_state.edit_tags if t.strip()]
+                    birth_date_str = st.session_state.birth_date.strftime("%Y-%m-%d") if st.session_state.birth_date else None
                     
                     updated_data = {
                         "id": current_user['id'],
@@ -209,7 +239,7 @@ def render_page():
                         "university": st.session_state.university, 
                         "department": st.session_state.department, 
                         "hometown": st.session_state.hometown,
-                        "birth_date": st.session_state.birth_date.strftime("%Y-%m-%d") if st.session_state.birth_date else "",
+                        "birth_date": birth_date_str,
                         "hobbies": hobbies_list, 
                         "tags": tags_list,
                         "happy_topic": st.session_state.happy_topic, 
