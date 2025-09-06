@@ -30,26 +30,37 @@ with st.sidebar:
         password=st.text_input("パスワード",type="password")
 
         if st.button("新規登録"):
-            try:
-                user=st.session_state.profile_manager.sign_up(email,password)
-                st.session_state.user=user
-                st.success("新規登録に成功しました!")
-                st.rerun()
-            except Exception as e:
-                st.error(f"新規登録に失敗しました: {e}")
+            if not email or not password:
+                st.error("メールアドレスとパスワードは必須です。")
+            else:
+                try:
+                    user=st.session_state.profile_manager.sign_up(email,password)
+                    st.session_state.user=user
+                    # 新規登録直後はプロフィールがないため、Falseに設定
+                    st.session_state.profile_exists = False 
+                    st.success("新規登録に成功しました!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"新規登録に失敗しました: {e}")
         if st.button("ログイン"):
-            try:
-                user=st.session_state.profile_manager.sign_in(email,password)
-                st.session_state.user=user
-                st.success("ログインに成功しました!")
-                st.rerun()
-            except Exception as e:
-                st.error(f"{e}")
+            if not email or not password:
+                st.error("メールアドレスとパスワードは必須です。")
+            else:
+                try:
+                    user=st.session_state.profile_manager.sign_in(email,password)
+                    st.session_state.user=user
+                    # ログイン時はプロフィールの存在を再チェック
+                    current_user_id=st.session_state.user['id']
+                    st.session_state.profile_exists=st.session_state.profile_manager.check_profile_exists(current_user_id)
+                    st.success("ログインに成功しました!")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"{e}")
     else:
         st.write(f"ログイン中: {st.session_state.user['email']}")
         if st.button("ログアウト"):
             st.session_state.user=None
-            # ログアウト時にページをリセット
+            st.session_state.profile_exists = False
             st.session_state.active_page = "みんなの図鑑"
             st.success("ログアウトしました")
             st.rerun()
@@ -58,14 +69,9 @@ with st.sidebar:
 # ログイン&プロフ作成済み/ログインのみ/未ログインの3パターンで表示を分ける
 if st.session_state.user:
     st.info(f"ようこそ、{st.session_state.user['email']}さん!")
-    current_user_id=st.session_state.user['id']
-    profile_exists=st.session_state.profile_manager.check_profile_exists(current_user_id)
-    # プロフィール存在状態をセッションにキャッシュ
-    st.session_state.profile_exists = profile_exists
-    if not profile_exists:
+    if not st.session_state.profile_exists:
         st.info("ようこそ!まずはあなたのプロフィールを作成しましょう。")
 else:
-    # 変更点：ログインしていなくても閲覧は許可するため、警告をソフトな案内に変更
     st.info("サイドバーからログインすると、マイページの編集やAIによる会話のヒント機能が利用できます。")
 
 

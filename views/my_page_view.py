@@ -8,24 +8,31 @@ def render_page():
     マイページを描画する関数。
     ログイン中のユーザーのプロフィールを常に表示・編集する。
     """
-    
+
     # --- セットアップ ---
     manager = st.session_state.profile_manager
-    current_login_user_id = st.session_state.user['id']
+    current_user = st.session_state.user
     
     st.subheader("マイページ", divider="blue")
 
+    # プロフィールが存在しない場合はメッセージを表示して終了
+    if not st.session_state.profile_exists:
+        st.warning("あなたのプロフィールはまだ作成されていません。")
+        st.info("ナビゲーションバーから「プロフィール作成」ページに移動してください。")
+        return
+
     # --- プロフィールデータの取得 ---
     try:
-        current_user_profile = manager.get_profile_by_id(current_login_user_id)
+        current_user_profile = manager.get_profile_by_id(current_user['id'])
     except Exception as e:
         st.error(f"プロフィールの読み込み中にエラーが発生しました: {e}")
-        st.warning("まだプロフィールが作成されていない可能性があります。「プロフィール作成」ページから作成してください。")
-        st.stop()
+        return
 
+    # 取得したプロフィールがNoneでないことを確認する
     if not current_user_profile:
-        st.warning("あなたのプロフィールが見つかりません。「プロフィール作成」ページからご自身のプロフィールを作成してください。")
-        st.stop()
+        st.warning("あなたのプロフィールが見つかりませんでした。データベースから削除された可能性があります。")
+        st.info("ナビゲーションバーから「プロフィール作成」ページに移動して、再度プロフィールを作成してください。")
+        return
 
     if 'edit_mode' not in st.session_state:
         st.session_state.edit_mode = False
@@ -49,17 +56,9 @@ def render_page():
     else:
         # --- 編集フォームの準備 ---
         if 'edit_hobbies' not in st.session_state:
-            hobbies_from_top_level = current_user_profile.get("hobbies", [])
-            if hobbies_from_top_level:
-                 st.session_state.edit_hobbies = hobbies_from_top_level or [""]
-            else:
-                talk_topics = current_user_profile.get("generated_profile", {}).get("talk_topics", {})
-                hobbies_str = talk_topics.get("hobbies", "")
-                st.session_state.edit_hobbies = [h.strip() for h in hobbies_str.split(',') if h.strip()] or [""]
-
+            st.session_state.edit_hobbies = current_user_profile.get("hobbies", [""])
         if 'edit_tags' not in st.session_state:
-            raw_tags = current_user_profile.get("tags", [])
-            st.session_state.edit_tags = [tag.lstrip('#').strip() for tag in raw_tags] or [""]
+            st.session_state.edit_tags = current_user_profile.get("tags", [""])
 
         def add_hobby():
             st.session_state.edit_hobbies.append("")
@@ -74,11 +73,20 @@ def render_page():
 
         st.info("情報を編集して、保存ボタンを押してください。")
 
-        gen_profile = current_user_profile.get("generated_profile", {})
-        basic_info = gen_profile.get("basic_info", {})
-        talk_topics = gen_profile.get("talk_topics", {})
-        animal_result = current_user_profile.get("animal_result", {})
-
+        # フォームの初期値をユーザー入力とAI生成の両方から取得
+        last_name_val = current_user_profile.get("last_name", "")
+        first_name_val = current_user_profile.get("first_name", "")
+        nickname_val = current_user_profile.get("nickname", "")
+        university_val = current_user_profile.get("university", "")
+        department_val = current_user_profile.get("department", "")
+        hometown_val = current_user_profile.get("hometown", "")
+        birth_date_val = current_user_profile.get("birth_date", "")
+        happy_topic_val = current_user_profile.get("happy_topic", "")
+        expert_topic_val = current_user_profile.get("expert_topic", "")
+        animal_name_val = current_user_profile.get("animal_name", "")
+        animal_category_val = current_user_profile.get("animal_category", "")
+        animal_reason_val = current_user_profile.get("animal_reason", "")
+        
         JAPANESE_UNIVERSITIES = [ "東京大学", "京都大学", "大阪大学", "東北大学", "名古屋大学", "九州大学", "北海道大学", "東京工業大学", "一橋大学", "神戸大学", "早稲田大学", "慶應義塾大学", "上智大学", "東京理科大学", "明治大学", "青山学院大学", "立教大学", "中央大学", "法政大学", "同志社大学", "立命館大学", "関西大学", "関西学院大学", "福岡大学" ]
         PREFECTURES = [ "北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県", "茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県", "新潟県", "富山県", "石川県", "福井県", "山梨県", "長野県", "岐阜県", "静岡県", "愛知県", "三重県", "滋賀県", "京都府", "大阪府", "兵庫県", "奈良県", "和歌山県", "鳥取県", "島根県", "岡山県", "広島県", "山口県", "徳島県", "香川県", "愛媛県", "高知県", "福岡県", "佐賀県", "長崎県", "熊本県", "大分県", "宮崎県", "鹿児島県", "沖縄県" ]
         DEPARTMENTS = [ "法学部", "経済学部", "経営学部", "商学部", "文学部", "人文学部", "社会学部", "国際関係学部", "外国語学部", "教育学部", "理学部", "工学部", "情報理工学部", "農学部", "医学部", "歯学部", "薬学部", "芸術学部", "体育学部", "総合政策学部", "環境情報学部" ]
@@ -89,28 +97,22 @@ def render_page():
             st.subheader("基本情報")
             col1, col2 = st.columns(2)
             with col1:
-                last_name_val = basic_info.get("last_name") or current_user_profile.get("last_name", "")
                 last_name = st.text_input("姓", value=last_name_val, key="last_name")
                 
-                nickname = st.text_input("ニックネーム *", value=current_user_profile.get("nickname", ""), key="nickname")
+                nickname = st.text_input("ニックネーム *", value=nickname_val, key="nickname")
 
-                current_university = basic_info.get("university") or current_user_profile.get("university")
-                university_index = JAPANESE_UNIVERSITIES.index(current_university) if current_university in JAPANESE_UNIVERSITIES else None
+                university_index = JAPANESE_UNIVERSITIES.index(university_val) if university_val in JAPANESE_UNIVERSITIES else None
                 university = st.selectbox("大学名 *", JAPANESE_UNIVERSITIES, index=university_index, placeholder="大学を選択してください", key="university")
             with col2:
-                first_name_val = basic_info.get("first_name") or current_user_profile.get("first_name", "")
                 first_name = st.text_input("名", value=first_name_val, key="first_name")
                 
-                birth_date_val = basic_info.get("birth_date") or current_user_profile.get("birth_date")
                 birth_date_obj = datetime.datetime.strptime(birth_date_val, "%Y-%m-%d").date() if birth_date_val else None
                 birth_date = st.date_input("生年月日", value=birth_date_obj, key="birth_date")
                 
-                current_department = basic_info.get("department") or current_user_profile.get("department")
-                department_index = DEPARTMENTS.index(current_department) if current_department in DEPARTMENTS else None
+                department_index = DEPARTMENTS.index(department_val) if department_val in DEPARTMENTS else None
                 department = st.selectbox("学部 *", DEPARTMENTS, index=department_index, placeholder="学部を選択してください", key="department")
             
-            current_hometown = basic_info.get("hometown") or current_user_profile.get("hometown")
-            hometown_index = PREFECTURES.index(current_hometown) if current_hometown in PREFECTURES else None
+            hometown_index = PREFECTURES.index(hometown_val) if hometown_val in PREFECTURES else None
             hometown = st.selectbox("出身地", PREFECTURES, index=hometown_index, placeholder="都道府県を選択してください", key="hometown")
 
         with tab2:
@@ -132,10 +134,8 @@ def render_page():
                     st.button("削除", key=f"delete_tag_{i}", on_click=delete_tag, args=(i,), use_container_width=True)
             st.button("＋追加", on_click=add_tag, key="add_tag_btn")
             st.markdown("---")
-            happy_topic_val = talk_topics.get("happy_topic") or current_user_profile.get("happy_topic", "")
             happy_topic = st.text_area("みんなと話したいこと", value=happy_topic_val, key="happy_topic")
             
-            expert_topic_val = talk_topics.get("expert_topic") or current_user_profile.get("expert_topic", "")
             expert_topic = st.text_area("ちょっと詳しいこと", value=expert_topic_val, key="expert_topic")
 
         with tab3:
@@ -154,7 +154,6 @@ def render_page():
             
             st.markdown("---")
             st.markdown("**動物アバター（AIによる自動生成）**")
-            animal_name_val = animal_result.get("name") or current_user_profile.get("animal_name", "")
             if animal_name_val:
 
                 col_img, col_text = st.columns([1, 3])
@@ -163,7 +162,7 @@ def render_page():
                     st.image(animal_image_data, width=80)
                 
                 with col_text:
-                    category = animal_result.get('category') or current_user_profile.get('animal_category', 'カテゴリ未分類')
+                    category = animal_category_val
                     st.markdown(f"**{category}**")
                     
                     html_content = f"""
@@ -173,7 +172,7 @@ def render_page():
                     """
                     st.markdown(html_content, unsafe_allow_html=True)
 
-                reason = animal_result.get("reason") or current_user_profile.get("animal_reason", "")
+                reason = animal_reason_val
                 st.info(reason)
             else:
                 st.caption("動物タイプはプロフィール作成時にAIによって自動生成されます。")
@@ -190,7 +189,7 @@ def render_page():
                         file_bytes = uploaded_file.getvalue()
                         try:
                             new_profile_image_url = manager.upload_profile_image(
-                                user_id=current_login_user_id,
+                                user_id=current_user['id'],
                                 file_body=file_bytes,
                                 file_name=uploaded_file.name
                             )
@@ -203,7 +202,7 @@ def render_page():
                     tags_list = [t.strip() for t in st.session_state.edit_tags if t.strip()]
                     
                     updated_data = {
-                        "id": current_login_user_id,
+                        "id": current_user['id'],
                         "last_name": st.session_state.last_name, 
                         "first_name": st.session_state.first_name, 
                         "nickname": st.session_state.nickname,
@@ -217,7 +216,7 @@ def render_page():
                         "expert_topic": st.session_state.expert_topic,
                         "profile_image_url": new_profile_image_url,
                     }
-                    manager.update_user_input(current_login_user_id, updated_data)
+                    manager.update_user_input(current_user['id'], updated_data)
 
                 st.success("プロフィールが更新されました！")
                 st.session_state.edit_mode = False
@@ -227,4 +226,3 @@ def render_page():
             if st.button("キャンセル", use_container_width=True):
                 st.session_state.edit_mode = False
                 st.rerun()
-

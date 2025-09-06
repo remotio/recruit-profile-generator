@@ -34,6 +34,11 @@ def display_profile_detail(profile: dict, manager):
     managerを使って動物の画像を動的に生成する。
     """
     
+    # 渡されたプロフィールがNoneの場合は何もしない
+    if not profile:
+        st.error("プロフィール情報が取得できませんでした。")
+        return
+
     gen_profile = profile.get('generated_profile', {})
     basic_info = gen_profile.get('basic_info', {})
     talk_topics = gen_profile.get('talk_topics', {})
@@ -42,8 +47,12 @@ def display_profile_detail(profile: dict, manager):
     col1,col2=st.columns([1,2])
 
     with col1:
+        profile_image_url = profile.get('profile_image_url')
+        if not profile_image_url:
+            profile_image_url = 'https://placehold.co/150x150/EFEFEF/333333?text=No+Img'
+            
         st.image(
-            profile.get('profile_image_url', 'https://placehold.co/150x150/EFEFEF/333333?text=No+Img'),
+            profile_image_url,
             width=150
         )
 
@@ -101,8 +110,11 @@ def display_profile_detail(profile: dict, manager):
     with colA:
         birth_date_str = basic_info.get('birth_date') or profile.get('birth_date')
         if birth_date_str:
-            dt_obj = datetime.strptime(birth_date_str, '%Y-%m-%d')
-            birth_date_formatted = f"{dt_obj.month}月{dt_obj.day}日"
+            try:
+                dt_obj = datetime.strptime(birth_date_str, '%Y-%m-%d')
+                birth_date_formatted = f"{dt_obj.month}月{dt_obj.day}日"
+            except (ValueError, TypeError):
+                birth_date_formatted = '未設定'
         else:
             birth_date_formatted = '未設定'
         st.markdown(f"**誕生日:** {birth_date_formatted}")
@@ -129,4 +141,3 @@ def display_profile_detail(profile: dict, manager):
 
 def render_profile_card(profile: dict,target_col):
     st.markdown(f"### {profile.get('nickname', 'No Name')}")
-
