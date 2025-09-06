@@ -18,6 +18,12 @@ if 'supabase_client' not in st.session_state:
 if 'user' not in st.session_state:
     st.session_state.user=None
 
+query_params = st.query_params
+if "page" in query_params and query_params["page"]=="profile_detail":
+    st.session_state.active_page="プロフィール詳細"
+    if "id" in query_params:
+        st.session_state.target_profile_id=query_params["id"]
+
 # 一旦サイドバーを用いたログインフォームを実装
 with st.sidebar:
     st.header("認証")
@@ -67,7 +73,7 @@ else:
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from views import all_profiles_view, my_page_view, create_profile_view
+from views import all_profiles_view, my_page_view, create_profile_view,profile_detail_view
 
 st.set_page_config(
     page_title="内定者図鑑ジェネレーター",
@@ -89,3 +95,5 @@ elif st.session_state.active_page == "マイページ":
     my_page_view.render_page()
 elif st.session_state.active_page == "プロフィール作成":
     create_profile_view.render_page()
+elif st.session_state.active_page == "プロフィール詳細":
+    profile_detail_view.render_page()
