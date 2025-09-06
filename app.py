@@ -28,6 +28,18 @@ if "page" in query_params and query_params["page"]=="profile_detail":
     if "id" in query_params:
         st.session_state.target_profile_id=query_params["id"]
 
+
+def logout():
+    """
+    st.session_stateの全てのキーを削除して，セッションをリセットする．
+    """
+    # st.session_stateのキーをリストに変換して、安全にループ処理
+    keys_to_delete = list(st.session_state.keys())
+    for key in keys_to_delete:
+        del st.session_state[key]
+    
+    st.success("ログアウトしました")
+
 # 一旦サイドバーを用いたログインフォームを実装
 with st.sidebar:
     st.header("認証")
@@ -64,12 +76,8 @@ with st.sidebar:
                     st.error(f"{e}")
     else:
         st.write(f"ログイン中: {st.session_state.user['email']}")
-        if st.button("ログアウト"):
-            st.session_state.user=None
-            st.session_state.profile_exists = False
-            st.session_state.active_page = "みんなの図鑑"
-            st.success("ログアウトしました")
-            st.rerun()
+        if st.button("ログアウト", on_click=logout):
+            pass
 
 # ログイン状態に応じたメイン画面の表示
 if st.session_state.user:
