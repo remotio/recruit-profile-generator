@@ -1,5 +1,4 @@
 import streamlit as st
-from api_client import create_profile
 import datetime
 
 JAPANESE_UNIVERSITIES = [
@@ -28,6 +27,9 @@ DEPARTMENTS = [
 
 def render_page():
     """「プロフィール作成」ページを描画する関数"""
+    
+    manager = st.session_state.profile_manager
+    
     if 'hobbies' not in st.session_state:
         st.session_state.hobbies = [""]
     if 'tags' not in st.session_state:
@@ -56,7 +58,7 @@ def render_page():
         st.selectbox("出身地 *", PREFECTURES, index=None, placeholder="都道府県を選択または入力して検索...", key="hometown")
     with col2:
         st.text_input("名", key="first_name")
-        st.date_input("誕生日", min_value=datetime.date(1980, 1, 1), max_value=datetime.date(2010, 12, 31), key="birth_date")
+        st.date_input("誕生日", min_value=datetime.date(1980, 1, 1), max_value=datetime.date(2010, 12, 31), value=None, key="birth_date")
         st.selectbox("学部 *", DEPARTMENTS, index=None, placeholder="学部・学科を選択または入力して検索...", key="department")
 
     st.divider()
@@ -94,24 +96,27 @@ def render_page():
                 tags = [tag.strip().lstrip("#") for tag in st.session_state.tags if tag.strip()]
                 
                 profile_data = {
+                    "id": st.session_state.user['id'], ### 変更：ログインユーザーのIDを追加
                     "last_name": st.session_state.last_name, "first_name": st.session_state.first_name,
-                    "nickname": st.session_state.nickname, "birth_date": st.session_state.birth_date.strftime("%Y-%m-%d"),
+                    "nickname": st.session_state.nickname, 
+                    "birth_date": st.session_state.birth_date.strftime("%Y-%m-%d") if st.session_state.birth_date else None,
                     "university": st.session_state.university,
                     "department": st.session_state.department, "hometown": st.session_state.hometown,
                     "hobbies": hobbies,
                     "happy_topic": st.session_state.happy_topic, "expert_topic": st.session_state.expert_topic,
                     "tags": tags
                 }
-                response = create_profile(profile_data)
+                response = manager.create_profile(profile_data)
 
             if response:
                 st.success("自己紹介が完成しました！")
                 st.balloons()
                 with st.container(border=True):
                     st.subheader(f"🎉 {response.get('nickname')}さんのプロフィール")
-                    st.write(f"**{response.get('generated_profile', {}).get('catchphrase', '')}**")
-                    st.write(response.get('generated_profile', {}).get('introduction_comment', ''))
+                    generated_profile = response.get('generated_profile', {})
                     animal_result = response.get('animal_result', {})
+                    st.write(f"**{generated_profile.get('catchphrase', '')}**")
+                    st.write(generated_profile.get('introduction_comment', ''))
                     st.subheader(f"あなたのイメージ: **{animal_result.get('name', '')}**")
                     st.write(animal_result.get('reason', ''))
             else:

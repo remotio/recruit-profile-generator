@@ -175,3 +175,101 @@ def sign_in(supabase:Client,email:str,password:str)->Dict[str,Any]:
     except Exception as e:
         print(f"ログイン中にエラーが発生しました: {e}")
         raise ValueError("ログインに失敗しました。") from e
+def get_memo(supabase: Client, author_id: str, target_id: str) -> Dict[str, Any] | None:
+    """
+    特定の一人のユーザーが，別のユーザーについて書いたメモを取得する．
+    メモが存在しない場合はNoneを返す．
+    """
+    try:
+        response = supabase.table('memos').select("*") \
+            .eq('author_id', author_id) \
+            .eq('target_id', target_id) \
+            .execute()
+
+        # 結果のリストにデータが含まれていれば，最初の要素（辞書）を返す
+        if response.data:
+            return response.data[0]
+        # データがなければ（メモが存在しなければ）Noneを返す
+        else:
+            return None
+            
+    except Exception as e:
+        print(f"メモの取得中にエラーが発生しました: {e}")
+        raise ValueError("メモの取得中にエラーが発生しました。") from e
+def upsert_memo(supabase:Client,author_id:str,target_id:str,memo_text:str)->Dict[str,Any]:
+    """
+    author_idからtarget_idへのメモを追加または更新する．
+    """
+    try:
+        response=supabase.table('memos').upsert({
+            "author_id":author_id,
+            "target_id":target_id,
+            "content":memo_text
+        },on_conflict='author_id,target_id').execute()
+        if not response.data:
+            raise ValueError("メモの追加または更新に失敗しました。")
+        return response.data[0]# upsertはリストを返すため最初の要素を取得
+    except Exception as e:
+        print(f"メモの追加または更新中にエラーが発生しました: {e}")
+        raise ValueError("メモの追加または更新に失敗しました。") from e
+def delete_memo(supabase:Client,author_id:str,target_id:str)->None:
+    """
+    メモを削除する
+    """
+    try:
+        supabase.table('memos').delete().eq('author_id',author_id).eq('target_id',target_id).execute()
+    except Exception as e:
+        print(f"メモの削除中にエラーが発生しました: {e}")
+        raise ValueError("メモの削除に失敗しました。") from e
+def upload_file_and_get_url(supabase:Client,bucket_name:str,file_path:str,file_body:bytes)->str:
+    """
+    指定されたバケットにファイルをアップロードし、その公開URLを取得する。
+
+    Args:
+        supabase: Supabaseクライアントのインスタンス
+        bucket_name: ファイルをアップロードするバケットの名前
+        file_path: バケット内でのファイルのパス（例: "images/photo.jpg"）
+        file_data: アップロードするファイルのバイナリデータ
+
+    Returns:
+        アップロードされたファイルの公開URL
+    """
+    try:
+        # ファイルをアップロード
+        response = supabase.storage.from_(bucket_name).upload(file=file_body, path=file_path)
+        # アップロードしたファイルの公開URLを取得
+        response=supabase.storage.from_(bucket_name).get_public_url(file_path)
+        return response
+    except Exception as e:
+        print(f"ファイルのアップロード中にエラーが発生しました: {e}")
+        raise ValueError("ファイルのアップロードに失敗しました。") from e
+
+def update_profile_url(supabase: Client, user_id: str, image_url: str) -> List[Dict[str, Any]]:
+    """
+    指定されたユーザーのprofile_image_urlを更新する．
+    """
+    try:
+        response = supabase.table('profiles').update({
+            "profile_image_url": image_url
+        }).eq('id', user_id).execute()
+        
+        if not response.data:
+            raise ValueError("プロフィール画像のURL更新に失敗しました。")
+        return response.data
+    except Exception as e:
+        print(f"プロフィール画像のURL更新中にエラーが発生しました: {e}")
+        raise ValueError("プロフィール画像のURL更新に失敗しました。") from e
+def search_profiles(supabase: Client, query: str, current_user_id: str) -> List[Dict[str, Any]]:
+    """
+    SupabaseのSQL関数(RPC)を呼び出して、統合検索を実行する。
+    """
+    try:
+        response = supabase.rpc('search_profiles', {
+            'search_query': query,
+            'exclude_user_id': current_user_id
+        }).execute()
+        return response.data
+    except Exception as e:
+        print(f"プロフィール検索中にエラー: {e}")
+        raise ValueError("プロフィールの検索に失敗しました。") from e
+
