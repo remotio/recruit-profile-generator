@@ -61,8 +61,8 @@ if st.session_state.user:
         #ここにメイン画面を表示する
         st.title("プロフィール")#インデントエラー回避の仮
 else:
-    st.warning("サイドバーから新規登録またはログインしてください。")
-
+    # 変更点：ログインしていなくても閲覧は許可するため、警告をソフトな案内に変更
+    st.info("サイドバーからログインすると、マイページの編集やAIによる会話のヒント機能が利用できます。")
 
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -77,15 +77,28 @@ st.set_page_config(
 
 render_nav_banner()
 
-if st.session_state.user is None:
-    st.info("サイドバーからログインしてください。")
-    st.stop()
+# 変更点：ログイン必須の st.stop() を削除し、ページごとの認証チェックに移行
+
 if 'active_page' not in st.session_state:
     st.session_state.active_page = "みんなの図鑑"
 
+
+# ページごとのルーティングと認証チェック
 if st.session_state.active_page == "みんなの図鑑":
+    # 「みんなの図鑑」はログインしていなくても表示を許可する
+    # all_profiles_view.py 側が user の有無をチェックするため、そのまま呼び出す
     all_profiles_view.render_page()
+
 elif st.session_state.active_page == "マイページ":
-    my_page_view.render_page()
+    # 「マイページ」はログインが必要
+    if st.session_state.user:
+        my_page_view.render_page()
+    else:
+        st.warning("マイページを表示するには、サイドバーからログインしてください。")
+
 elif st.session_state.active_page == "プロフィール作成":
-    create_profile_view.render_page()
+    # 「プロフィール作成」もログインが必要
+    if st.session_state.user:
+        create_profile_view.render_page()
+    else:
+        st.warning("プロフィールを作成・編集するには、サイドバーからログインしてください。")
