@@ -68,7 +68,6 @@ def display_profile_detail(profile: dict, manager):
         animal_icon_col, animal_text_col = st.columns([0.5, 3]) 
 
         with animal_icon_col:
-            # --- 修正: managerを使って動物の画像を生成 ---
             animal_name_val = animal_result.get("name") or profile.get("animal_name")
             if animal_name_val:
                 animal_image_data = manager.assign_animal_image_url(animal_name_val)
