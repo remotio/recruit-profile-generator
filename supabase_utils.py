@@ -1,5 +1,6 @@
 from supabase import Client
 from typing import Dict, Any, List
+from typing import Optional
 
 def get_profile_by_id(supabase: Client, profile_id: str):
     """
@@ -89,20 +90,23 @@ def find_similar_users(supabase: Client, user_id: str, query_vector: list):
     except Exception as e:
         print(f"類似ユーザーの検索中にエラーが発生しました: {e}")
         raise ValueError("類似ユーザーの検索中にエラーが発生しました。") from e
-    
-def get_all_profiles(supabase: Client,user_id:str):
+
+def get_all_profiles(supabase: Client,user_id:Optional[str]=None) -> List[Dict[str, Any]]:
     """
-    自身を除く全ユーザーのプロフィールを取得する．
+    全ユーザーのプロフィールを取得する．
 
     Args:
         supabase: Supabaseクライアントのインスタンス．
-        user_id: 自身のユーザーID（結果から除外するために使用）．
+        user_id: （なくても実行可能な変数）自身のユーザーID（結果から除外するために使用）．
 
     Returns:
         ユーザーのプロフィールデータのリスト
     """
     try:
-        response = supabase.table('profiles').select("*").neq('id', user_id).execute()
+        if user_id:
+            response = supabase.table('profiles').select("*").neq('id', user_id).execute()
+        else:
+            response = supabase.table('profiles').select("*").execute()
         if not response.data:
             return [] #自分以外のユーザが存在しない場合は空リストを返す 
         return response.data
