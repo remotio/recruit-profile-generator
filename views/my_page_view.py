@@ -229,6 +229,7 @@ def render_page():
                     
                     hobbies_list = [h.strip() for h in st.session_state.edit_hobbies if h.strip()]
                     tags_list = [t.strip() for t in st.session_state.edit_tags if t.strip()]
+                    birth_date_str = st.session_state.birth_date.strftime("%Y-%m-%d") if st.session_state.birth_date else None
                     
                     updated_data = {
                         "id": current_user['id'],
@@ -238,7 +239,7 @@ def render_page():
                         "university": st.session_state.university, 
                         "department": st.session_state.department, 
                         "hometown": st.session_state.hometown,
-                        "birth_date": st.session_state.birth_date.strftime("%Y-%m-%d") if st.session_state.birth_date else "",
+                        "birth_date": birth_date_str,
                         "hobbies": hobbies_list, 
                         "tags": tags_list,
                         "happy_topic": st.session_state.happy_topic, 
