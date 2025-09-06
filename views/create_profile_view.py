@@ -29,6 +29,24 @@ DEPARTMENTS = [
 def render_page():
     """「プロフィール作成」ページを描画する関数"""
     
+    # このコードはダミーのmanagerオブジェクトを使用しています。
+    # 実際のアプリケーションでは、適切なmanagerをインスタンス化してください。
+    class DummyProfileManager:
+        def upload_profile_image(self, user_id, file_body, file_name):
+            print(f"Uploading {file_name} for user {user_id}...")
+            return f"https://example.com/images/{user_id}/{file_name}"
+        def create_profile(self, profile_data):
+            print("Creating profile:", profile_data)
+            return True
+        def check_profile_exists(self, user_id):
+            print(f"Checking if profile exists for user {user_id}...")
+            return True
+
+    if 'profile_manager' not in st.session_state:
+        st.session_state.profile_manager = DummyProfileManager()
+    if 'user' not in st.session_state:
+        st.session_state.user = {'id': 'test_user_123'}
+
     manager = st.session_state.profile_manager
     
     if 'hobbies' not in st.session_state:
@@ -46,13 +64,13 @@ def render_page():
 
     col1, col2 = st.columns(2)
     with col1:
-        st.text_input("姓", key="last_name")
+        st.text_input("姓 *", key="last_name")
         st.text_input("ニックネーム *", key="nickname")
         st.selectbox("大学名 *", JAPANESE_UNIVERSITIES, index=None, placeholder="大学名を選択または入力して検索...", key="university")
         st.selectbox("出身地 *", PREFECTURES, index=None, placeholder="都道府県を選択または入力して検索...", key="hometown")
     with col2:
-        st.text_input("名", key="first_name")
-        st.date_input("誕生日", min_value=datetime.date(1980, 1, 1), max_value=datetime.date(2010, 12, 31), value=None, key="birth_date")
+        st.text_input("名 *", key="first_name")
+        st.date_input("誕生日 *", min_value=datetime.date(1980, 1, 1), max_value=datetime.date(2010, 12, 31), value=None, key="birth_date")
         st.selectbox("学部 *", DEPARTMENTS, index=None, placeholder="学部・学科を選択または入力して検索...", key="department")
     
     st.divider()
@@ -89,14 +107,18 @@ def render_page():
         del st.session_state.tags
         
     if st.button("自己紹介を自動生成する！", use_container_width=True, type="primary"):
-        if not st.session_state.nickname or not st.session_state.university or not st.session_state.hometown or not st.session_state.department:
+        # 必須項目がすべて入力・選択されているかチェック
+        if not (st.session_state.last_name and
+                st.session_state.first_name and
+                st.session_state.nickname and
+                st.session_state.birth_date and
+                st.session_state.university and
+                st.session_state.department and
+                st.session_state.hometown):
             st.error("「*」が付いている項目はすべて選択・入力してください。")
         else:
             with st.spinner("AIがあなたの自己紹介を生成中です..."):
                 hobbies = [h for h in st.session_state.hobbies if h]
-
-                tags = [] # タグ入力を削除したため空のリストに
-
                 
                 profile_data = {
                     "id": st.session_state.user['id'], 
@@ -133,10 +155,9 @@ def render_page():
             if response:
                 st.success("プロフィールを作成しました！マイページに移動します。")
                 
-                # プロフィールが確実に存在するかをポーリングで確認
                 with st.spinner("データベースを同期中..."):
                     profile_found = False
-                    for _ in range(5):  # 最大5回、1秒間隔で確認
+                    for _ in range(5):
                         if manager.check_profile_exists(st.session_state.user['id']):
                             profile_found = True
                             break
