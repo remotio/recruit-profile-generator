@@ -112,6 +112,9 @@ def render_page():
             st.session_state.search_results = None
             st.rerun() # ページを再読み込みして一覧表示に戻す
     else:
+        # この行を追加して、suggested_profilesを必ず初期化する
+        suggested_profiles = []
+
         if st.session_state.user:
             with st.spinner("あなたにぴったりの人を探しています..."):
                 try:
@@ -119,7 +122,6 @@ def render_page():
                     similar_profiles = profile_manager.find_similar_profiles(st.session_state.user['id'])
                     
                     # 表示する類似ユーザーを格納するリスト
-                    suggested_profiles = []
                     if similar_profiles:
                         # 2. 10人の中からランダムに表示する人を決める（最大二人）
                         sample_count = min(len(similar_profiles), 2)
@@ -137,7 +139,8 @@ def render_page():
                 except Exception as e:
                     # 類似ユーザー検索に失敗しても、ページ全体が停止しないようにする
                     st.toast(f"類似ユーザーの取得に失敗しました: {e}", icon="⚠️")
-                    suggested_profiles = [] # エラー時は空にする
+                    # エラー時も初期化されているので、この行は削除
+                    # suggested_profiles = [] 
 
         with st.spinner("みんなのプロフィールを読み込んでいます..."):
             try:
@@ -272,9 +275,9 @@ def render_profile_card(profile:dict,target_col):
                         birth_date_formatted = f"{dt_obj.month}月{dt_obj.day}日"
                     else:
                         birth_date_formatted = '未設定'
-                    st.markdown(f"**誕生日:**  {birth_date_formatted}")
-                    st.markdown(f"**出身地:**  {profile.get('hometown', '未設定')}")
-                    st.markdown(f"**大学:**  {profile.get('university', '未設定')}")
+                    st.markdown(f"**誕生日:** {birth_date_formatted}")
+                    st.markdown(f"**出身地:** {profile.get('hometown', '未設定')}")
+                    st.markdown(f"**大学:** {profile.get('university', '未設定')}")
                 with colB:
                     st.markdown(f"**趣味:** {', '.join(profile.get('hobbies', []))}")
                     st.markdown(f"**話したいこと:** {profile.get('happy_topic', '未設定')}")
