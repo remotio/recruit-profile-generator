@@ -15,7 +15,7 @@ def render_page():
     # --- セットアップ ---
     manager = st.session_state.profile_manager
     current_user = st.session_state.user
-    
+     
     st.subheader("マイページ", divider="blue")
 
     # プロフィールが存在しない場合はメッセージを表示して終了
@@ -50,11 +50,11 @@ def render_page():
             del st.session_state.edit_tags
 
         display_profile_detail(current_user_profile, manager) 
-        
+         
         if st.button("プロフィールを編集する", type="primary"):
             st.session_state.edit_mode = True
             st.rerun()
-        
+         
         # QR関連
         if 'show_qr' not in st.session_state:
             st.session_state.show_qr = False
@@ -79,7 +79,7 @@ def render_page():
                 st.image(img_bytes, width=200)
                 st.code(my_profile_url, language="text")
                 st.caption("このQRコードを使って，あなたのプロフィールを簡単に共有できます！")
-        
+         
 
     # (2) 編集モード
     else:
@@ -100,7 +100,7 @@ def render_page():
             if len(st.session_state.edit_tags) > 1:
                 st.session_state.edit_tags.pop(index)
 
-        st.info("情報を編集して、保存ボタンを押してください。")
+        st.info("情報を編集して、保存ボタンを押してください。（* は必須項目です）") # INFOテキストを更新
 
         # フォームの初期値をユーザー入力とAI生成の両方から取得
         last_name_val = current_user_profile.get("last_name", "")
@@ -115,7 +115,7 @@ def render_page():
         animal_name_val = current_user_profile.get("animal_name", "")
         animal_category_val = current_user_profile.get("animal_category", "")
         animal_reason_val = current_user_profile.get("animal_reason", "")
-        
+         
         JAPANESE_UNIVERSITIES = [ "東京大学", "京都大学", "大阪大学", "東北大学", "名古屋大学", "九州大学", "北海道大学", "東京工業大学", "一橋大学", "神戸大学", "早稲田大学", "慶應義塾大学", "上智大学", "東京理科大学", "明治大学", "青山学院大学", "立教大学", "中央大学", "法政大学", "同志社大学", "立命館大学", "関西大学", "関西学院大学", "福岡大学" ]
         PREFECTURES = [ "北海道", "青森県", "岩手県", "宮城県", "秋田県", "山形県", "福島県", "茨城県", "栃木県", "群馬県", "埼玉県", "千葉県", "東京都", "神奈川県", "新潟県", "富山県", "石川県", "福井県", "山梨県", "長野県", "岐阜県", "静岡県", "愛知県", "三重県", "滋賀県", "京都府", "大阪府", "兵庫県", "奈良県", "和歌山県", "鳥取県", "島根県", "岡山県", "広島県", "山口県", "徳島県", "香川県", "愛媛県", "高知県", "福岡県", "佐賀県", "長崎県", "熊本県", "大分県", "宮崎県", "鹿児島県", "沖縄県" ]
         DEPARTMENTS = [ "法学部", "経済学部", "経営学部", "商学部", "文学部", "人文学部", "社会学部", "国際関係学部", "外国語学部", "教育学部", "理学部", "工学部", "情報理工学部", "農学部", "医学部", "歯学部", "薬学部", "芸術学部", "体育学部", "総合政策学部", "環境情報学部" ]
@@ -126,23 +126,27 @@ def render_page():
             st.subheader("基本情報")
             col1, col2 = st.columns(2)
             with col1:
-                last_name = st.text_input("姓", value=last_name_val, key="last_name")
-                
+                # --- 変更点 1: ラベルに * を追加 ---
+                last_name = st.text_input("姓 *", value=last_name_val, key="last_name")
+                 
                 nickname = st.text_input("ニックネーム *", value=nickname_val, key="nickname")
 
                 university_index = JAPANESE_UNIVERSITIES.index(university_val) if university_val in JAPANESE_UNIVERSITIES else None
                 university = st.selectbox("大学名 *", JAPANESE_UNIVERSITIES, index=university_index, placeholder="大学を選択してください", key="university")
             with col2:
-                first_name = st.text_input("名", value=first_name_val, key="first_name")
-                
+                # --- 変更点 2: ラベルに * を追加 ---
+                first_name = st.text_input("名 *", value=first_name_val, key="first_name")
+                 
                 birth_date_obj = datetime.datetime.strptime(birth_date_val, "%Y-%m-%d").date() if birth_date_val else None
-                birth_date = st.date_input("生年月日", value=birth_date_obj, key="birth_date")
-                
+                # --- 変更点 3: ラベルに * を追加 ---
+                birth_date = st.date_input("生年月日 *", value=birth_date_obj, key="birth_date")
+                 
                 department_index = DEPARTMENTS.index(department_val) if department_val in DEPARTMENTS else None
                 department = st.selectbox("学部 *", DEPARTMENTS, index=department_index, placeholder="学部を選択してください", key="department")
-            
+             
             hometown_index = PREFECTURES.index(hometown_val) if hometown_val in PREFECTURES else None
-            hometown = st.selectbox("出身地", PREFECTURES, index=hometown_index, placeholder="都道府県を選択してください", key="hometown")
+            # --- 変更点 4: ラベルに * を追加 ---
+            hometown = st.selectbox("出身地 *", PREFECTURES, index=hometown_index, placeholder="都道府県を選択してください", key="hometown")
 
         with tab2:
             st.subheader("趣味")
@@ -164,23 +168,23 @@ def render_page():
             st.button("＋追加", on_click=add_tag, key="add_tag_btn")
             st.markdown("---")
             happy_topic = st.text_area("みんなと話したいこと", value=happy_topic_val, key="happy_topic")
-            
+             
             expert_topic = st.text_area("ちょっと詳しいこと", value=expert_topic_val, key="expert_topic")
 
         with tab3:
             st.subheader("画像とキャラクター")
-            
+             
             st.markdown("**プロフィール画像**")
             current_image_url = current_user_profile.get("profile_image_url", "")
             if current_image_url:
                 st.image(current_image_url, width=150)
-            
+             
             uploaded_file = st.file_uploader(
                 "新しい画像をアップロード", 
                 type=["png", "jpg", "jpeg"], 
                 key="uploaded_image"
             )
-            
+             
             st.markdown("---")
             st.markdown("**動物アバター（AIによる自動生成）**")
             if animal_name_val:
@@ -189,11 +193,11 @@ def render_page():
                 with col_img:
                     animal_image_data = manager.assign_animal_image_url(animal_name_val)
                     st.image(animal_image_data, width=80)
-                
+                 
                 with col_text:
                     category = animal_category_val
                     st.markdown(f"**{category}**")
-                    
+                     
                     html_content = f"""
                     <div style="display: flex; align-items: baseline; margin-top: 0px;">
                       <span style="font-size: 1.5em; font-weight: 600; margin-right: 5px; line-height: 1.2;">{animal_name_val}</span>
@@ -207,51 +211,77 @@ def render_page():
                 st.caption("動物タイプはプロフィール作成時にAIによって自動生成されます。")
 
         st.markdown("---")
-        
+         
         col_save, col_cancel = st.columns(2)
         with col_save:
             if st.button("変更を保存する", use_container_width=True, type="primary"):
-                with st.spinner("プロフィールを更新しています..."):
-                    
-                    new_profile_image_url = current_user_profile.get("profile_image_url", "") 
-                    if uploaded_file is not None:
-                        file_bytes = uploaded_file.getvalue()
-                        try:
-                            new_profile_image_url = manager.upload_profile_image(
-                                user_id=current_user['id'],
-                                file_body=file_bytes,
-                                file_name=uploaded_file.name
-                            )
-                            st.toast("画像をアップロードしました！", icon="🎉")
-                        except Exception as e:
-                            st.error(f"画像のアップロードに失敗しました: {e}")
-                            st.stop()
-                    
-                    hobbies_list = [h.strip() for h in st.session_state.edit_hobbies if h.strip()]
-                    tags_list = [t.strip() for t in st.session_state.edit_tags if t.strip()]
-                    birth_date_str = st.session_state.birth_date.strftime("%Y-%m-%d") if st.session_state.birth_date else None
-                    
-                    updated_data = {
-                        "id": current_user['id'],
-                        "last_name": st.session_state.last_name, 
-                        "first_name": st.session_state.first_name, 
-                        "nickname": st.session_state.nickname,
-                        "university": st.session_state.university, 
-                        "department": st.session_state.department, 
-                        "hometown": st.session_state.hometown,
-                        "birth_date": birth_date_str,
-                        "hobbies": hobbies_list, 
-                        "tags": tags_list,
-                        "happy_topic": st.session_state.happy_topic, 
-                        "expert_topic": st.session_state.expert_topic,
-                        "profile_image_url": new_profile_image_url,
-                    }
-                    manager.update_user_input(current_user['id'], updated_data)
+                
+                # --- 変更点 5: ここからバリデーション処理を追加 ---
+                required_fields = {
+                    "last_name": "姓",
+                    "first_name": "名",
+                    "nickname": "ニックネーム",
+                    "university": "大学名",
+                    "department": "学部",
+                    "hometown": "出身地",
+                    "birth_date": "生年月日"
+                }
+                
+                missing_fields = []
+                for field_key, field_name in required_fields.items():
+                    # st.session_stateの値がNoneまたは空文字列でないかをチェック
+                    if not st.session_state.get(field_key):
+                        missing_fields.append(field_name)
+                
+                # 未入力項目がある場合
+                if missing_fields:
+                    st.error(f"以下の必須項目を入力してください: {', '.join(missing_fields)}")
+                
+                # すべての必須項目が入力されている場合（元の保存処理を実行）
+                else:
+                    with st.spinner("プロフィールを更新しています..."):
+                         
+                        new_profile_image_url = current_user_profile.get("profile_image_url", "") 
+                        if uploaded_file is not None:
+                            file_bytes = uploaded_file.getvalue()
+                            try:
+                                new_profile_image_url = manager.upload_profile_image(
+                                    user_id=current_user['id'],
+                                    file_body=file_bytes,
+                                    file_name=uploaded_file.name
+                                )
+                                st.toast("画像をアップロードしました！", icon="🎉")
+                            except Exception as e:
+                                st.error(f"画像のアップロードに失敗しました: {e}")
+                                st.stop()
+                         
+                        hobbies_list = [h.strip() for h in st.session_state.edit_hobbies if h.strip()]
+                        tags_list = [t.strip() for t in st.session_state.edit_tags if t.strip()]
+                        # バリデーションにより、birth_dateがNoneでないことが保証されている
+                        birth_date_str = st.session_state.birth_date.strftime("%Y-%m-%d")
+                         
+                        updated_data = {
+                            "id": current_user['id'],
+                            "last_name": st.session_state.last_name, 
+                            "first_name": st.session_state.first_name, 
+                            "nickname": st.session_state.nickname,
+                            "university": st.session_state.university, 
+                            "department": st.session_state.department, 
+                            "hometown": st.session_state.hometown,
+                            "birth_date": birth_date_str,
+                            "hobbies": hobbies_list, 
+                            "tags": tags_list,
+                            "happy_topic": st.session_state.happy_topic, 
+                            "expert_topic": st.session_state.expert_topic,
+                            "profile_image_url": new_profile_image_url,
+                        }
+                        manager.update_user_input(current_user['id'], updated_data)
 
-                st.success("プロフィールが更新されました！")
-                st.session_state.edit_mode = False
-                st.rerun()
-        
+                    st.success("プロフィールが更新されました！")
+                    st.session_state.edit_mode = False
+                    st.rerun()
+                # --- 変更点 5: バリデーション処理ここまで ---
+         
         with col_cancel:
             if st.button("キャンセル", use_container_width=True):
                 st.session_state.edit_mode = False
