@@ -83,17 +83,22 @@ st.set_page_config(
 
 render_nav_banner()
 
-if st.session_state.user is None:
-    st.info("サイドバーからログインしてください。")
-    st.stop()
 if 'active_page' not in st.session_state:
     st.session_state.active_page = "みんなの図鑑"
+# ログインが必須なページをリストで管理
+PAGES_REQUIRING_LOGIN = ["マイページ", "プロフィール作成"]
 
+# 現在のページがログイン必須リストに含まれていて、かつログインしていない場合
+if st.session_state.active_page in PAGES_REQUIRING_LOGIN and st.session_state.user is None:
+    st.warning("このページを閲覧するには、サイドバーからログインしてください。")
+    st.stop() # 処理を中断
+
+# ページに応じて描画する関数を呼び出す
 if st.session_state.active_page == "みんなの図鑑":
     all_profiles_view.render_page()
 elif st.session_state.active_page == "マイページ":
     my_page_view.render_page()
-elif st.session_state.active_page == "プロフィール作成":
-    create_profile_view.render_page()
 elif st.session_state.active_page == "プロフィール詳細":
     profile_detail_view.render_page()
+elif st.session_state.active_page == "プロフィール作成":
+    create_profile_view.render_page()
