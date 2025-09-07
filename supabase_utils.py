@@ -203,22 +203,37 @@ def get_memo(supabase: Client, author_id: str, target_id: str) -> Dict[str, Any]
     except Exception as e:
         print(f"メモの取得中にエラーが発生しました: {e}")
         raise ValueError("メモの取得中にエラーが発生しました。") from e
-def upsert_memo(supabase:Client,author_id:str,target_id:str,memo_text:str)->Dict[str,Any]:
+def insert_memo(supabase: Client, author_id: str, target_id: str, memo_text: str) -> Dict[str, Any]:
     """
-    author_idからtarget_idへのメモを追加または更新する．
+    新しいメモをmemosテーブルに挿入する。
     """
     try:
-        response=supabase.table('memos').upsert({
-            "author_id":author_id,
-            "target_id":target_id,
-            "content":memo_text
-        },on_conflict='author_id,target_id').execute()
+        response = supabase.table('memos').insert({
+            "author_id": author_id,
+            "target_id": target_id,
+            "content": memo_text
+        }).execute()
         if not response.data:
-            raise ValueError("メモの追加または更新に失敗しました。")
-        return response.data[0]# upsertはリストを返すため最初の要素を取得
+            raise ValueError("メモの新規作成に失敗しました。")
+        return response.data[0]
     except Exception as e:
-        print(f"メモの追加または更新中にエラーが発生しました: {e}")
-        raise ValueError("メモの追加または更新に失敗しました。") from e
+        print(f"メモの新規作成中にエラーが発生しました: {e}")
+        raise ValueError("メモの新規作成に失敗しました。") from e
+
+def update_memo(supabase: Client, author_id: str, target_id: str, memo_text: str) -> Dict[str, Any]:
+    """
+    既存のメモを更新する。
+    """
+    try:
+        response = supabase.table('memos').update({
+            "content": memo_text
+        }).eq('author_id', author_id).eq('target_id', target_id).execute()
+        if not response.data:
+            raise ValueError("メモの更新に失敗しました。")
+        return response.data[0]
+    except Exception as e:
+        print(f"メモの更新中にエラーが発生しました: {e}")
+        raise ValueError("メモの更新に失敗しました。") from e
 def delete_memo(supabase:Client,author_id:str,target_id:str)->None:
     """
     メモを削除する

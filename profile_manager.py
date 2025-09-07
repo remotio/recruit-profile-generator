@@ -192,11 +192,24 @@ class ProfileManager:
         """
         return supabase_utils.get_memo(self.db_client, current_user_id, target_user_id)
     def save_memo(self,current_user_id:str,target_user_id:str,content:str)->Dict[str,Any]:
-        """
-        現在ログインしているユーザーが,対象ユーザーについてメモを保存する.
-
-        """
-        return supabase_utils.upsert_memo(self.db_client,current_user_id,target_user_id,content)
+            """
+            現在ログインしているユーザーが,対象ユーザーについてメモを保存する.
+            既存のメモがあれば更新、なければ新規作成する。
+            """
+            try:
+                # 最初に既存のメモがあるか確認する
+                existing_memo = self.get_memo_for_target(current_user_id, target_user_id)
+                
+                if existing_memo:
+                    # あれば更新
+                    return supabase_utils.update_memo(self.db_client, current_user_id, target_user_id, content)
+                else:
+                    # なければ新規作成
+                    return supabase_utils.insert_memo(self.db_client, current_user_id, target_user_id, content)
+            except Exception as e:
+                # 予期せぬエラーをキャッチ
+                print(f"メモの保存処理全体でエラーが発生しました: {e}")
+                raise ValueError("メモの追加または更新に失敗しました。") from e
     def delete_memo(self,current_user_id:str,target_user_id:str)->None:
         """
         現在ログインしているユーザーが，対象ユーザーについて書いたメモを削除する．
