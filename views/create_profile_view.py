@@ -83,7 +83,7 @@ def render_page():
     )
     
     if uploaded_file is not None:
-        st.image(uploaded_file, caption='アップロードされた画像', use_column_width=False, width=150)
+        st.image(uploaded_file, caption='アップロードされた画像', width=150)
     
     st.divider()
 
